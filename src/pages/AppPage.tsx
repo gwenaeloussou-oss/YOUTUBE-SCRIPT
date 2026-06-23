@@ -285,7 +285,7 @@ export default function AppPage({ user, onLogout }: Props) {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-[#FF0000] p-1.5 rounded-lg"><Youtube className="w-5 h-5 text-white" /></div>
-            <h1 className="text-xl font-bold tracking-tighter">YouBoost <span className="text-[#FF0000]">IA</span></h1>
+            <h1 className="text-xl font-bold tracking-tighter">YouScript <span className="text-[#FF0000]">Booster</span></h1>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/60 hover:text-white">

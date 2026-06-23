@@ -60,7 +60,7 @@ export default function LandingPage({ onStart }: Props) {
               <Youtube className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tighter">
-              YouBoost <span className="text-[#FF0000]">IA</span>
+              YouScript <span className="text-[#FF0000]">Booster</span>
             </span>
           </div>
           <button
@@ -211,7 +211,7 @@ export default function LandingPage({ onStart }: Props) {
             onClick={onStart}
             className="inline-flex items-center gap-2 bg-[#FF0000] hover:bg-[#D90000] px-10 py-5 rounded-2xl text-lg font-bold transition-all active:scale-95 shadow-[0_0_60px_rgba(255,0,0,0.25)]"
           >
-            <Sparkles className="w-5 h-5" /> Lancer YouBoost IA
+            <Sparkles className="w-5 h-5" /> Lancer YouScript Booster
           </button>
         </div>
       </section>
@@ -222,7 +222,7 @@ export default function LandingPage({ onStart }: Props) {
           <div className="bg-[#FF0000] p-1.5 rounded-lg">
             <Youtube className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold tracking-tighter">YouBoost <span className="text-[#FF0000]">IA</span></span>
+          <span className="font-bold tracking-tighter">YouScript <span className="text-[#FF0000]">Booster</span></span>
         </div>
         <p className="text-white/20 text-xs tracking-widest uppercase">PROPULSÉ PAR EMPIRE SCALING</p>
       </footer>

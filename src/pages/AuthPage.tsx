@@ -193,7 +193,7 @@ export default function AuthPage({ onBack, onAuth }: Props) {
               <Youtube className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tighter">
-              YouBoost <span className="text-[#FF0000]">IA</span>
+              YouScript <span className="text-[#FF0000]">Booster</span>
             </span>
           </div>
         </div>
@@ -206,7 +206,7 @@ export default function AuthPage({ onBack, onAuth }: Props) {
               {mode === 'login' ? 'Bon retour 👋' : 'Créer votre compte'}
             </h1>
             <p className="text-white/50 text-sm">
-              {mode === 'login' ? 'Connectez-vous pour accéder à YouBoost IA' : 'Rejoignez des milliers de créateurs'}
+              {mode === 'login' ? 'Connectez-vous pour accéder à YouScript Booster' : 'Rejoignez des milliers de créateurs'}
             </p>
           </div>
 
