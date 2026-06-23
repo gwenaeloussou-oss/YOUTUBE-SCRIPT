@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { Youtube, Mail, Lock, User, Phone, ArrowLeft, Eye, EyeOff, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 type AuthMode = 'login' | 'signup';
 
@@ -77,26 +78,9 @@ const COUNTRIES: Country[] = [
   { name: 'Vietnam', code: 'VN', dial: '+84', flag: '🇻🇳' },
 ];
 
-type StoredUser = { name: string; email: string; password: string; phone: string; dialCode: string; country: string };
+export type LoggedUser = { id: string; name: string; email: string };
 
-function getUsers(): StoredUser[] {
-  try {
-    return JSON.parse(localStorage.getItem('youscript_users') || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveUsers(users: StoredUser[]) {
-  localStorage.setItem('youscript_users', JSON.stringify(users));
-}
-
-export type LoggedUser = { name: string; email: string };
-
-type Props = {
-  onBack: () => void;
-  onAuth: (user: LoggedUser) => void;
-};
+type Props = { onBack: () => void; onAuth: (user: LoggedUser) => void };
 
 export default function AuthPage({ onBack, onAuth }: Props) {
   const [mode, setMode] = useState<AuthMode>('login');
@@ -124,8 +108,7 @@ export default function AuthPage({ onBack, onAuth }: Props) {
   }, []);
 
   const filteredCountries = COUNTRIES.filter(c =>
-    c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-    c.dial.includes(countrySearch)
+    c.name.toLowerCase().includes(countrySearch.toLowerCase()) || c.dial.includes(countrySearch)
   );
 
   const switchMode = (m: AuthMode) => {
@@ -139,53 +122,69 @@ export default function AuthPage({ onBack, onAuth }: Props) {
     setCountrySearch('');
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    setTimeout(() => {
-      const users = getUsers();
-
+    try {
       if (mode === 'signup') {
-        if (!name.trim()) { setError('Veuillez entrer votre nom.'); setLoading(false); return; }
-        if (!email.includes('@')) { setError('Adresse email invalide.'); setLoading(false); return; }
-        if (password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); setLoading(false); return; }
-        if (!/^[\d\s\-().]{5,14}$/.test(phone)) { setError('Numéro de téléphone invalide.'); setLoading(false); return; }
-        if (users.find((u) => u.email === email)) {
-          setError('Un compte existe déjà avec cet email.');
-          setLoading(false);
+        if (!name.trim()) { setError('Veuillez entrer votre nom.'); return; }
+        if (!/^[\d\s\-().]{5,14}$/.test(phone)) { setError('Numéro de téléphone invalide.'); return; }
+
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name: name.trim(),
+              phone: `${selectedCountry.dial}${phone.replace(/\s/g, '')}`,
+              dial_code: selectedCountry.dial,
+              country: selectedCountry.name,
+            },
+          },
+        });
+
+        if (signUpError) {
+          if (signUpError.message.includes('already registered')) {
+            setError('Un compte existe déjà avec cet email.');
+          } else {
+            setError(signUpError.message);
+          }
           return;
         }
-        const fullPhone = `${selectedCountry.dial}${phone.replace(/\s/g, '')}`;
-        const newUser: StoredUser = { name, email, password, phone: fullPhone, dialCode: selectedCountry.dial, country: selectedCountry.name };
-        saveUsers([...users, newUser]);
-        localStorage.setItem('youscript_session', JSON.stringify({ name, email }));
-        onAuth({ name, email });
+
+        if (data.user) {
+          onAuth({ id: data.user.id, name: name.trim(), email });
+        }
       } else {
-        const user = users.find((u) => u.email === email && u.password === password);
-        if (!user) {
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (signInError) {
           setError('Email ou mot de passe incorrect.');
-          setLoading(false);
           return;
         }
-        localStorage.setItem('youscript_session', JSON.stringify({ name: user.name, email: user.email }));
-        onAuth({ name: user.name, email: user.email });
+
+        if (data.user) {
+          onAuth({
+            id: data.user.id,
+            name: data.user.user_metadata?.name ?? email,
+            email: data.user.email ?? email,
+          });
+        }
       }
+    } catch {
+      setError('Une erreur est survenue. Veuillez réessayer.');
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white font-sans flex flex-col">
-
-      {/* Header */}
       <header className="border-b border-white/10 py-5 px-6 md:px-12 bg-[#0f0f0f]/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-white/40 hover:text-white transition-colors text-sm"
-          >
+          <button onClick={onBack} className="flex items-center gap-2 text-white/40 hover:text-white transition-colors text-sm">
             <ArrowLeft className="w-4 h-4" /> Retour
           </button>
           <div className="w-px h-5 bg-white/10" />
@@ -200,120 +199,65 @@ export default function AuthPage({ onBack, onAuth }: Props) {
         </div>
       </header>
 
-      {/* Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md space-y-8">
-
-          {/* Title */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">
               {mode === 'login' ? 'Bon retour 👋' : 'Créer votre compte'}
             </h1>
             <p className="text-white/50 text-sm">
-              {mode === 'login'
-                ? 'Connectez-vous pour accéder à YouBoost IA'
-                : 'Rejoignez des milliers de créateurs'}
+              {mode === 'login' ? 'Connectez-vous pour accéder à YouBoost IA' : 'Rejoignez des milliers de créateurs'}
             </p>
           </div>
 
-          {/* Tab switcher */}
           <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1">
-            <button
-              onClick={() => switchMode('login')}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                mode === 'login' ? 'bg-[#FF0000] text-white' : 'text-white/40 hover:text-white'
-              }`}
-            >
+            <button onClick={() => switchMode('login')} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${mode === 'login' ? 'bg-[#FF0000] text-white' : 'text-white/40 hover:text-white'}`}>
               Se connecter
             </button>
-            <button
-              onClick={() => switchMode('signup')}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                mode === 'signup' ? 'bg-[#FF0000] text-white' : 'text-white/40 hover:text-white'
-              }`}
-            >
+            <button onClick={() => switchMode('signup')} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${mode === 'signup' ? 'bg-[#FF0000] text-white' : 'text-white/40 hover:text-white'}`}>
               Créer un compte
             </button>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Votre nom"
-                    required
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm"
-                  />
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Votre nom" required className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm" />
                 </div>
 
-                {/* Phone with country selector */}
                 <div className="flex gap-2">
-                  {/* Country dropdown */}
                   <div className="relative" ref={dropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => { setDropdownOpen(!dropdownOpen); setCountrySearch(''); }}
-                      className="h-full flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-2xl px-3 py-4 hover:border-white/30 focus:outline-none focus:border-[#FF0000] transition-all text-sm whitespace-nowrap"
-                    >
+                    <button type="button" onClick={() => { setDropdownOpen(!dropdownOpen); setCountrySearch(''); }} className="h-full flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-2xl px-3 py-4 hover:border-white/30 focus:outline-none focus:border-[#FF0000] transition-all text-sm whitespace-nowrap">
                       <span className="text-lg leading-none">{selectedCountry.flag}</span>
                       <span className="text-white/70 font-mono text-xs">{selectedCountry.dial}</span>
                       <ChevronDown className={`w-3 h-3 text-white/30 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
-
                     {dropdownOpen && (
                       <div className="absolute left-0 top-full mt-2 w-72 bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
                         <div className="p-2 border-b border-white/10">
-                          <input
-                            type="text"
-                            value={countrySearch}
-                            onChange={(e) => setCountrySearch(e.target.value)}
-                            placeholder="Rechercher un pays..."
-                            autoFocus
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#FF0000] placeholder:text-white/20 transition-all"
-                          />
+                          <input type="text" value={countrySearch} onChange={e => setCountrySearch(e.target.value)} placeholder="Rechercher un pays..." autoFocus className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#FF0000] placeholder:text-white/20 transition-all" />
                         </div>
                         <ul className="max-h-52 overflow-y-auto">
                           {filteredCountries.length === 0 ? (
                             <li className="px-4 py-3 text-white/30 text-sm">Aucun résultat</li>
-                          ) : (
-                            filteredCountries.map((c) => (
-                              <li key={c.code}>
-                                <button
-                                  type="button"
-                                  onClick={() => { setSelectedCountry(c); setDropdownOpen(false); setCountrySearch(''); }}
-                                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors text-left ${
-                                    selectedCountry.code === c.code ? 'bg-[#FF0000]/10 text-[#FF0000]' : 'text-white/80'
-                                  }`}
-                                >
-                                  <span className="text-base">{c.flag}</span>
-                                  <span className="flex-1 truncate">{c.name}</span>
-                                  <span className="font-mono text-xs text-white/40">{c.dial}</span>
-                                </button>
-                              </li>
-                            ))
-                          )}
+                          ) : filteredCountries.map(c => (
+                            <li key={c.code}>
+                              <button type="button" onClick={() => { setSelectedCountry(c); setDropdownOpen(false); setCountrySearch(''); }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors text-left ${selectedCountry.code === c.code ? 'bg-[#FF0000]/10 text-[#FF0000]' : 'text-white/80'}`}>
+                                <span className="text-base">{c.flag}</span>
+                                <span className="flex-1 truncate">{c.name}</span>
+                                <span className="font-mono text-xs text-white/40">{c.dial}</span>
+                              </button>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     )}
                   </div>
-
-                  {/* Phone number input */}
                   <div className="relative flex-1">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-(). ]/g, ''))}
-                      placeholder="Numéro de téléphone"
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm"
-                    />
+                    <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/[^\d\s\-(). ]/g, ''))} placeholder="Numéro de téléphone" required className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm" />
                   </div>
                 </div>
               </>
@@ -321,60 +265,31 @@ export default function AuthPage({ onBack, onAuth }: Props) {
 
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Adresse email"
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm"
-              />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Adresse email" required className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm" />
             </div>
 
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === 'signup' ? 'Mot de passe (min. 6 caractères)' : 'Mot de passe'}
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-              >
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === 'signup' ? 'Mot de passe (min. 6 caractères)' : 'Mot de passe'} required className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-12 focus:outline-none focus:border-[#FF0000] transition-all placeholder:text-white/20 text-sm" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
             {error && (
               <div className="flex items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {error}
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-2"
-            >
+            <button type="submit" disabled={loading} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-2">
               {loading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Chargement...</>
-              ) : mode === 'login' ? (
-                'Se connecter'
-              ) : (
-                "Créer mon compte"
-              )}
+              ) : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
             </button>
           </form>
 
-          <p className="text-center text-white/30 text-xs">
-            En continuant, vous acceptez nos conditions d'utilisation.
-          </p>
+          <p className="text-center text-white/30 text-xs">En continuant, vous acceptez nos conditions d'utilisation.</p>
         </div>
       </div>
     </div>
