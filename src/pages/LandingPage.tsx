@@ -84,7 +84,7 @@ export default function LandingPage({ onStart }: Props) {
           className="relative max-w-4xl mx-auto space-y-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#FF0000]/10 border border-[#FF0000]/20 rounded-full text-xs font-bold uppercase tracking-widest text-[#FF0000]">
-            <Zap className="w-3 h-3" /> PROPULSÉ PAR WILLIAM ACADEMY
+            <Zap className="w-3 h-3" /> PROPULSÉ PAR EMPIRE SCALING
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tighter">
             Créez des scripts YouTube<br />
@@ -100,7 +100,6 @@ export default function LandingPage({ onStart }: Props) {
             >
               <Sparkles className="w-5 h-5" /> Essayer gratuitement
             </button>
-            <span className="text-white/40 text-sm">Aucune inscription requise</span>
           </div>
         </motion.div>
       </section>
@@ -202,7 +201,7 @@ export default function LandingPage({ onStart }: Props) {
             Prêt à créer votre prochain succès ?
           </h2>
           <ul className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-white/60">
-            {['Gratuit', 'Aucune inscription', 'Résultat en secondes'].map((item) => (
+            {['Gratuit', 'Résultat en secondes'].map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#FF0000]" /> {item}
               </li>
@@ -225,7 +224,7 @@ export default function LandingPage({ onStart }: Props) {
           </div>
           <span className="font-bold tracking-tighter">YouBoost <span className="text-[#FF0000]">IA</span></span>
         </div>
-        <p className="text-white/20 text-xs tracking-widest uppercase">PROPULSÉ PAR WILLIAM ACADEMY</p>
+        <p className="text-white/20 text-xs tracking-widest uppercase">PROPULSÉ PAR EMPIRE SCALING</p>
       </footer>
     </div>
   );
