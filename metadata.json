@@ -1,0 +1,6 @@
+{
+  "name": "YouScript AI",
+  "description": "Générateur de scripts YouTube par IA (analyse d'URL, scripts multilingues, hooks, et miniatures).",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
