@@ -1,20 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
-import { createClient } from '@supabase/supabase-js';
-import { braveWebSearch, buildSearchQuery, LANGUAGE_INSTRUCTIONS } from './_lib';
+import { getUserPlan, braveWebSearch, buildSearchQuery, LANGUAGE_INSTRUCTIONS } from './_lib';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
-async function getUserPlan(userId?: string): Promise<'free' | 'standard'> {
-  if (!userId) return 'free';
-  const { data } = await supabaseAdmin.from('profiles').select('plan').eq('id', userId).single();
-  return (data?.plan as 'free' | 'standard') ?? 'free';
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }

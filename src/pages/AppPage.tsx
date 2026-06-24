@@ -40,6 +40,7 @@ type Props = { user: LoggedUser; onLogout: () => void };
 
 export default function AppPage({ user, onLogout }: Props) {
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
+  const [planExpiresAt, setPlanExpiresAt] = useState<Date | null>(null);
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -67,6 +68,15 @@ export default function AppPage({ user, onLogout }: Props) {
   const isStandard = plan === 'standard';
   const scriptLimit = isStandard ? STANDARD_LIMIT : FREE_LIMIT;
 
+  // Expiry helpers
+  const now = new Date();
+  const daysUntilExpiry = planExpiresAt
+    ? Math.ceil((planExpiresAt.getTime() - now.getTime()) / 86_400_000)
+    : null;
+  const inGrace = isStandard && daysUntilExpiry !== null && daysUntilExpiry < 0;
+  const graceDaysLeft = inGrace ? 5 + (daysUntilExpiry ?? 0) : null;
+  const showExpiryWarning = isStandard && daysUntilExpiry !== null && daysUntilExpiry <= 7;
+
   // Load profile, usage and history from Supabase on mount
   useEffect(() => {
     async function loadUserData() {
@@ -76,6 +86,7 @@ export default function AppPage({ user, onLogout }: Props) {
         db.getHistory(user.id),
       ]);
       setPlan(profileData.plan);
+      setPlanExpiresAt(profileData.planExpiresAt ? new Date(profileData.planExpiresAt) : null);
       if (profileData.plan === 'free') setLanguage('Français');
       setMonthlyUsage(usageCount);
       setHistory(historyItems);
@@ -303,8 +314,16 @@ export default function AppPage({ user, onLogout }: Props) {
 
               <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                 {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                {checkoutLoading ? 'Redirection vers le paiement...' : 'Passer au Standard — 10 000 FCFA/mois'}
+                {checkoutLoading ? 'Redirection vers le paiement...' : isStandard ? 'Renouveler — 10 000 FCFA/mois' : 'Passer au Standard — 10 000 FCFA/mois'}
               </button>
+              {isStandard && planExpiresAt && (
+                <p className="text-center text-white/30 text-xs">
+                  {inGrace
+                    ? `Période de grâce active — accès jusqu'au ${new Date(planExpiresAt.getTime() + 5 * 86_400_000).toLocaleDateString('fr-FR')}`
+                    : `Actuel expire le ${planExpiresAt.toLocaleDateString('fr-FR')} · Renouvellement depuis cette date`
+                  }
+                </p>
+              )}
               <p className="text-center text-white/20 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
 
             </motion.div>
@@ -327,10 +346,16 @@ export default function AppPage({ user, onLogout }: Props) {
             </button>
 
             {isStandard ? (
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl">
-                <Crown className="w-3.5 h-3.5 text-yellow-400" />
-                <span className="text-xs font-bold text-yellow-400">STANDARD</span>
-              </div>
+              <button onClick={openUpgradeModal} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${inGrace ? 'bg-red-500/10 border-red-500/30' : showExpiryWarning ? 'bg-orange-500/10 border-orange-500/30' : 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'}`}>
+                <Crown className={`w-3.5 h-3.5 ${inGrace ? 'text-red-400' : showExpiryWarning ? 'text-orange-400' : 'text-yellow-400'}`} />
+                <span className={`text-xs font-bold ${inGrace ? 'text-red-400' : showExpiryWarning ? 'text-orange-400' : 'text-yellow-400'}`}>STANDARD</span>
+                {inGrace && graceDaysLeft !== null && (
+                  <span className="text-xs text-red-400 hidden sm:block">· grâce {graceDaysLeft}j</span>
+                )}
+                {!inGrace && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
+                  <span className="text-xs text-orange-400 hidden sm:block">· {daysUntilExpiry}j</span>
+                )}
+              </button>
             ) : (
               <button onClick={openUpgradeModal} className="flex items-center gap-1.5 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/50 hover:text-white text-xs font-semibold">
                 <Crown className="w-3.5 h-3.5" />
@@ -350,6 +375,23 @@ export default function AppPage({ user, onLogout }: Props) {
           </div>
         </div>
       </header>
+
+      {/* Expiry warning banner */}
+      {showExpiryWarning && (
+        <div className={`px-4 py-3 flex items-center justify-between text-sm ${inGrace ? 'bg-red-500/15 border-b border-red-500/20 text-red-300' : 'bg-orange-500/10 border-b border-orange-500/20 text-orange-300'}`}>
+          <div className="flex items-center gap-2 max-w-7xl mx-auto w-full">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {inGrace
+              ? <span>Abonnement expiré — période de grâce : <strong>{graceDaysLeft} jour{(graceDaysLeft ?? 0) > 1 ? 's' : ''} restant{(graceDaysLeft ?? 0) > 1 ? 's' : ''}</strong>. Renouvelez pour ne pas perdre l'accès.</span>
+              : <span>Abonnement expire dans <strong>{daysUntilExpiry} jour{(daysUntilExpiry ?? 0) > 1 ? 's' : ''}</strong>.</span>
+            }
+            <button onClick={handleCheckout} disabled={checkoutLoading} className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 font-semibold text-xs transition-all">
+              {checkoutLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+              Renouveler — 10 000 FCFA
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-2 gap-12">
 

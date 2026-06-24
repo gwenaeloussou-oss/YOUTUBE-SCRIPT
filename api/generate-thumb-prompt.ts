@@ -1,13 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
-import { createClient } from '@supabase/supabase-js';
+import { getUserPlan } from './_lib';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -16,8 +11,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── SERVER-SIDE PLAN ENFORCEMENT ─────────────────────────────────────────
   if (!userId) return res.status(401).json({ error: 'Non autorisé.' });
-  const { data: profile } = await supabaseAdmin.from('profiles').select('plan').eq('id', userId).single();
-  if (!profile || profile.plan !== 'standard') {
+  const plan = await getUserPlan(userId);
+  if (plan !== 'standard') {
     return res.status(403).json({ error: 'Disponible uniquement avec l\'abonnement Standard.' });
   }
   // ─────────────────────────────────────────────────────────────────────────

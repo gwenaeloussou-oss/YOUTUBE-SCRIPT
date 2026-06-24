@@ -82,3 +82,8 @@ CREATE TRIGGER on_auth_user_created
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_plan_check;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_plan_check CHECK (plan IN ('free', 'standard'));
 UPDATE public.profiles SET plan = 'standard' WHERE plan = 'pro';
+
+-- ============================================================
+-- Ajout expiration abonnement (30 jours + 5 jours de grâce)
+-- ============================================================
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_expires_at timestamptz;

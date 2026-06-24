@@ -1,4 +1,33 @@
 // Shared utilities for all Vercel serverless functions
+import { createClient } from '@supabase/supabase-js';
+
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.VITE_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
+
+const GRACE_DAYS = 5; // days after expiry before hard downgrade
+
+export async function getUserPlan(userId?: string): Promise<'free' | 'standard'> {
+  if (!userId) return 'free';
+  const db = getSupabaseAdmin();
+  const { data } = await db.from('profiles').select('plan, plan_expires_at').eq('id', userId).single();
+  if (!data || data.plan !== 'standard') return 'free';
+
+  if (data.plan_expires_at) {
+    const expires = new Date(data.plan_expires_at);
+    const graceEnd = new Date(expires.getTime() + GRACE_DAYS * 86_400_000);
+    if (Date.now() > graceEnd.getTime()) {
+      // Past grace period — auto-downgrade
+      await db.from('profiles').update({ plan: 'free', plan_expires_at: null }).eq('id', userId);
+      return 'free';
+    }
+  }
+  return 'standard';
+}
+
 
 export function extractVideoId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);

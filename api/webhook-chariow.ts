@@ -17,9 +17,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (event === 'successful.sale') {
     const userId = sale?.custom_metadata?.userId;
     if (userId) {
+      // Fetch current expiry to extend from it if still active, otherwise from now
+      const { data: current } = await supabaseAdmin
+        .from('profiles')
+        .select('plan_expires_at')
+        .eq('id', userId)
+        .single();
+
+      const now = new Date();
+      const currentExpiry = current?.plan_expires_at ? new Date(current.plan_expires_at) : now;
+      const baseDate = currentExpiry > now ? currentExpiry : now;
+      const newExpiry = new Date(baseDate.getTime() + 30 * 86_400_000); // +30 days
+
       await supabaseAdmin
         .from('profiles')
-        .update({ plan: 'standard' })
+        .update({ plan: 'standard', plan_expires_at: newExpiry.toISOString() })
         .eq('id', userId);
     }
   }
