@@ -1,13 +1,33 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
-  const { titre, hook, description, script_complet, language } = req.body;
-  const fullScript = [script_complet?.intro ?? '', ...(script_complet?.developpement ?? []), script_complet?.conclusion ?? '', script_complet?.cta ?? ''].filter(Boolean).join('\n\n');
+  const { titre, hook, description, script_complet, language, userId } = req.body;
+
+  // ── SERVER-SIDE PLAN ENFORCEMENT ─────────────────────────────────────────
+  if (!userId) return res.status(401).json({ error: 'Non autorisé.' });
+  const { data: profile } = await supabaseAdmin.from('profiles').select('plan').eq('id', userId).single();
+  if (!profile || profile.plan !== 'standard') {
+    return res.status(403).json({ error: 'Disponible uniquement avec l\'abonnement Standard.' });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const fullScript = [
+    script_complet?.intro ?? '',
+    ...(script_complet?.developpement ?? []),
+    script_complet?.conclusion ?? '',
+    script_complet?.cta ?? '',
+  ].filter(Boolean).join('\n\n');
 
   const bannerOptions: Record<string, string> = {
     'Français': 'BREAKING / EXCLUSIF / RÉVÉLATION / ALERTE / CHOC',
@@ -17,14 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   };
   const bannerHint = bannerOptions[language] ?? `BREAKING / EXCLUSIVE (adapt to ${language})`;
 
-  try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
-      system: 'You are a world-class YouTube thumbnail art director and viral content strategist. You analyze video scripts deeply and generate ultra-precise JSON prompts for creating viral thumbnails. You always return ONLY valid JSON — no text before or after, no markdown code blocks.',
-      messages: [{
-        role: 'user',
-        content: `Analyze this YouTube video script and generate a complete structured JSON thumbnail prompt.
+  const prompt = `Analyze this YouTube video script and generate a complete structured JSON thumbnail prompt.
 
 VIDEO LANGUAGE: ${language}
 TITLE: ${titre}
@@ -78,17 +91,28 @@ Return ONLY this JSON (no markdown, no code block, no explanation):
     "style_global": "hyperrealistic 3D or cinematic photo, dramatic orange/red rim lighting, studio quality"
   },
   "prompt_image_final": "[150-200 word image generation prompt IN ENGLISH ONLY for Midjourney/DALL-E/Flux. Describe: main subject with exact expression and pose, background atmosphere with specific colors and elements, lighting setup, composition, emotional impact, visual style. Self-contained. No text or letters in the generated image.]"
-}`,
-      }],
+}`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096,
+      system: 'You are a world-class YouTube thumbnail art director and viral content strategist. You analyze video scripts deeply and generate ultra-precise JSON prompts for creating viral thumbnails. You always return ONLY valid JSON — no text before or after, no markdown code blocks.',
+      messages: [{ role: 'user', content: prompt }],
     });
 
     const content = message.content[0];
     if (content.type !== 'text') throw new Error('Unexpected response');
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON found');
-    res.json(JSON.parse(jsonMatch[0]));
+
+    // Robust JSON extraction: find outermost { }
+    const text = content.text.trim();
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1 || end <= start) throw new Error('No JSON found in response');
+    const jsonStr = text.slice(start, end + 1);
+    res.json(JSON.parse(jsonStr));
   } catch (err) {
-    console.error(err);
+    console.error('generate-thumb-prompt error:', err);
     res.status(500).json({ error: 'Erreur lors de la génération du prompt JSON.' });
   }
 }

@@ -1,19 +1,39 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
 import { braveWebSearch, buildSearchQuery, LANGUAGE_INSTRUCTIONS } from './_lib';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
+
+async function getUserPlan(userId?: string): Promise<'free' | 'standard'> {
+  if (!userId) return 'free';
+  const { data } = await supabaseAdmin.from('profiles').select('plan').eq('id', userId).single();
+  return (data?.plan as 'free' | 'standard') ?? 'free';
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
-  const { transcript, articleText, freeText, url, language, wordCount, options, regenerateStyle, webSearch } = req.body;
-  const langInstruction = LANGUAGE_INSTRUCTIONS[language] ?? `Write everything in ${language}.`;
+  const { transcript, articleText, freeText, url, language, wordCount, options, regenerateStyle, webSearch, userId } = req.body;
+
+  // ── SERVER-SIDE PLAN ENFORCEMENT ─────────────────────────────────────────
+  const plan = await getUserPlan(userId);
+  const isStandard = plan === 'standard';
+  const effectiveLanguage = isStandard ? (language ?? 'Français') : 'Français';
+  const effectiveWebSearch = isStandard ? (webSearch ?? false) : false;
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const langInstruction = LANGUAGE_INSTRUCTIONS[effectiveLanguage] ?? `Write everything in ${effectiveLanguage}.`;
   const optionsList = Object.entries(options as Record<string, boolean>).filter(([, v]) => v).map(([k]) => k).join(', ');
 
   // ── FREE TEXT: dedicated strict rewrite prompt ───────────────────────────
   if (freeText) {
-    const rewritePrompt = `You are given a text. Your ONLY job is to REWRITE it as a YouTube script in ${language}.
+    const rewritePrompt = `You are given a text. Your ONLY job is to REWRITE it as a YouTube script in ${effectiveLanguage}.
 
 ══════════════════════════════════════════════
 ORIGINAL TEXT (this is your ONLY source of content):
@@ -42,18 +62,18 @@ LANGUAGE: ${langInstruction}
 
 Respond ONLY with valid JSON:
 {
-  "titre": "catchy title derived from the original text in ${language} (max 70 chars)",
-  "description": "Full YouTube SEO description in ${language}: (1) 2-3 line hook, (2) 150-200 word summary, (3) 3-5 relevant hashtags. All in ${language}.",
-  "hook": "opening hook sentence in ${language} — derived from the most striking point in the original text",
+  "titre": "catchy title derived from the original text in ${effectiveLanguage} (max 70 chars)",
+  "description": "Full YouTube SEO description in ${effectiveLanguage}: (1) 2-3 line hook, (2) 150-200 word summary, (3) 3-5 relevant hashtags. All in ${effectiveLanguage}.",
+  "hook": "opening hook sentence in ${effectiveLanguage} — derived from the most striking point in the original text",
   "script_complet": {
-    "intro": "hook + open loop based on the original text in ${language} (~15% of word count)",
-    "developpement": ["body section 1 in ${language}", "body section 2 in ${language}", "body section 3 in ${language}"],
-    "conclusion": "summary of key insight FROM the original text in ${language}",
-    "cta": "natural call to action in ${language}"
+    "intro": "hook + open loop based on the original text in ${effectiveLanguage} (~15% of word count)",
+    "developpement": ["body section 1 in ${effectiveLanguage}", "body section 2 in ${effectiveLanguage}", "body section 3 in ${effectiveLanguage}"],
+    "conclusion": "summary of key insight FROM the original text in ${effectiveLanguage}",
+    "cta": "natural call to action in ${effectiveLanguage}"
   },
   "idee_miniature": {
     "background": "#hexcolor",
-    "text": "short thumbnail text in ${language} (max 5 words)",
+    "text": "short thumbnail text in ${effectiveLanguage} (max 5 words)",
     "elements": ["visual element 1", "visual element 2", "visual element 3"]
   }
 }`;
@@ -91,10 +111,10 @@ Respond ONLY with valid JSON:
   }
 
   let webSearchBlock = '';
-  if (webSearch && process.env.BRAVE_SEARCH_API_KEY) {
+  if (effectiveWebSearch && process.env.BRAVE_SEARCH_API_KEY) {
     try {
       const query = buildSearchQuery({ articleText, transcript, url });
-      const searchResults = await braveWebSearch(query, process.env.BRAVE_SEARCH_API_KEY, language);
+      const searchResults = await braveWebSearch(query, process.env.BRAVE_SEARCH_API_KEY, effectiveLanguage);
       if (searchResults) webSearchBlock = `\n\nWEB SEARCH RESULTS (use to enrich with up-to-date facts — only what is relevant and credible):\n\n${searchResults}`;
     } catch (err) { console.warn('Web search skipped:', err); }
   }
@@ -123,22 +143,22 @@ MANDATORY WRITING RULES:
 
 FORMATTING RULE: ZERO markdown — no **bold**, no ## headers, no bullet points, no section labels. Pure flowing prose for voiceover.
 
-CRITICAL: Every word in the JSON must be in ${language}.
+CRITICAL: Every word in the JSON must be in ${effectiveLanguage}.
 
 Respond ONLY with valid JSON:
 {
-  "titre": "catchy curiosity-driven title in ${language} (max 70 chars)",
-  "description": "Full YouTube SEO description in ${language}: (1) 2-3 line hook, (2) 150-200 word body with keyword 2-3 times, (3) 3-5 hashtags. All in ${language}.",
-  "hook": "first 3-second hook in ${language}",
+  "titre": "catchy curiosity-driven title in ${effectiveLanguage} (max 70 chars)",
+  "description": "Full YouTube SEO description in ${effectiveLanguage}: (1) 2-3 line hook, (2) 150-200 word body with keyword 2-3 times, (3) 3-5 hashtags. All in ${effectiveLanguage}.",
+  "hook": "first 3-second hook in ${effectiveLanguage}",
   "script_complet": {
-    "intro": "hook + open loop + credibility setup in ${language} (~15% of word count)",
-    "developpement": ["body section 1 with retention loop in ${language}", "body section 2 with pattern interrupt in ${language}", "body section 3 with emotional peak in ${language}"],
-    "conclusion": "key insight summary + emotional payoff in ${language}",
-    "cta": "natural call to action in ${language}"
+    "intro": "hook + open loop + credibility setup in ${effectiveLanguage} (~15% of word count)",
+    "developpement": ["body section 1 with retention loop in ${effectiveLanguage}", "body section 2 with pattern interrupt in ${effectiveLanguage}", "body section 3 with emotional peak in ${effectiveLanguage}"],
+    "conclusion": "key insight summary + emotional payoff in ${effectiveLanguage}",
+    "cta": "natural call to action in ${effectiveLanguage}"
   },
   "idee_miniature": {
     "background": "#hexcolor",
-    "text": "short punchy thumbnail text in ${language} (max 5 words)",
+    "text": "short punchy thumbnail text in ${effectiveLanguage} (max 5 words)",
     "elements": ["visual element 1", "visual element 2", "visual element 3"]
   }
 }`;

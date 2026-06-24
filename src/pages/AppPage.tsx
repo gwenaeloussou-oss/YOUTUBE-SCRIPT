@@ -76,6 +76,7 @@ export default function AppPage({ user, onLogout }: Props) {
         db.getHistory(user.id),
       ]);
       setPlan(profileData.plan);
+      if (profileData.plan === 'free') setLanguage('Français');
       setMonthlyUsage(usageCount);
       setHistory(historyItems);
     }
@@ -153,11 +154,12 @@ export default function AppPage({ user, onLogout }: Props) {
           articleText: articleText || undefined,
           freeText: sourceType === 'text' ? freeText : undefined,
           url: sourceType === 'video' ? url : articleUrl,
-          language,
+          language: isStandard ? language : 'Français',
           wordCount,
           options: { title: true, description: true, hook: true, thumbnail: true },
           regenerateStyle,
           webSearch: isStandard && webSearch,
+          userId: user.id,
         }),
       });
 
@@ -210,7 +212,7 @@ export default function AppPage({ user, onLogout }: Props) {
       const res = await fetch('/api/generate-thumb-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titre: result.titre, hook: result.hook, description: result.description, script_complet: result.script_complet, language }),
+        body: JSON.stringify({ titre: result.titre, hook: result.hook, description: result.description, script_complet: result.script_complet, language, userId: user.id }),
       });
       if (!res.ok) throw new Error('Erreur génération prompt JSON');
       setThumbPrompt({ loading: false, json: JSON.stringify(await res.json(), null, 2), error: null });
