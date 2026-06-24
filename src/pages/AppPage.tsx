@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Youtube, Languages, Sparkles, Copy, Download, RotateCcw, Check,
   AlertCircle, Loader2, Layout, Type, FileText, LogOut, AlignLeft,
-  Newspaper, History, Braces, Globe, Lock, Crown, X, Zap,
+  Newspaper, History, Braces, Globe, Lock, Crown, X, Zap, Shield,
 } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
 import HistoryDrawer, { type HistoryItem } from '../components/HistoryDrawer';
@@ -36,9 +36,9 @@ const LANGUAGES = [
   { id: 'Português', label: 'Português' },
 ];
 
-type Props = { user: LoggedUser; onLogout: () => void };
+type Props = { user: LoggedUser; onLogout: () => void; onAdmin?: () => void };
 
-export default function AppPage({ user, onLogout }: Props) {
+export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [planExpiresAt, setPlanExpiresAt] = useState<Date | null>(null);
   const [monthlyUsage, setMonthlyUsage] = useState(0);
@@ -339,6 +339,12 @@ export default function AppPage({ user, onLogout }: Props) {
             <h1 className="text-xl font-bold tracking-tighter">YouScript <span className="text-[#FF0000]">Booster</span></h1>
           </div>
           <div className="flex items-center gap-2">
+            {onAdmin && (
+              <button onClick={onAdmin} className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 border border-purple-500/20 rounded-xl hover:bg-purple-500/20 transition-all text-purple-400 hover:text-purple-300">
+                <Shield className="w-4 h-4" />
+                <span className="text-sm hidden sm:block font-medium">Admin</span>
+              </button>
+            )}
             <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/60 hover:text-white">
               <History className="w-4 h-4" />
               <span className="text-sm hidden sm:block">Historique</span>
