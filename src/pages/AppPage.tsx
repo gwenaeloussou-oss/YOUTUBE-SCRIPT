@@ -282,7 +282,7 @@ export default function AppPage({ user, onLogout }: Props) {
                 <div className="bg-gradient-to-br from-[#FF0000]/10 to-orange-500/10 border border-[#FF0000]/30 rounded-2xl p-4 space-y-3 relative">
                   <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
                   <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
-                  <p className="text-2xl font-bold">6 900<span className="text-sm font-normal text-white/40"> FCFA/mois</span></p>
+                  <p className="text-2xl font-bold">10 000<span className="text-sm font-normal text-white/40"> FCFA/mois</span></p>
                   <ul className="space-y-2 text-xs text-white/80">
                     <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 60 scripts / mois</li>
                     <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 4 langues</li>
@@ -301,7 +301,7 @@ export default function AppPage({ user, onLogout }: Props) {
 
               <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                 {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                {checkoutLoading ? 'Redirection vers le paiement...' : 'Passer au Standard — 6 900 FCFA/mois'}
+                {checkoutLoading ? 'Redirection vers le paiement...' : 'Passer au Standard — 10 000 FCFA/mois'}
               </button>
               <p className="text-center text-white/20 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
 

@@ -250,7 +250,7 @@ export default function LandingPage({ onStart }: Props) {
               <div className="space-y-1">
                 <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-5xl font-extrabold">6 900</span>
+                  <span className="text-5xl font-extrabold">10 000</span>
                   <span className="text-white/40 text-sm mb-2">FCFA / mois</span>
                 </div>
                 <p className="text-white/40 text-xs">Paiement sécurisé via Monero</p>
