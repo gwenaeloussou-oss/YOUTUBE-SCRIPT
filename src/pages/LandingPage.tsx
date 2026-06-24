@@ -9,6 +9,9 @@ import {
   ArrowRight,
   CheckCircle2,
   Star,
+  Check,
+  X,
+  Crown,
 } from 'lucide-react';
 
 type Props = { onStart: () => void };
@@ -190,6 +193,81 @@ export default function LandingPage({ onStart }: Props) {
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-20 px-6 bg-white/[0.02] border-y border-white/5">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-14 space-y-3">
+            <p className="text-xs uppercase tracking-widest text-[#FF0000] font-bold">Tarifs</p>
+            <h2 className="text-3xl md:text-4xl font-bold">Simple et transparent</h2>
+            <p className="text-white/40 text-sm">Commencez gratuitement. Passez au Standard quand vous êtes prêt.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+
+            {/* Free */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-6"
+            >
+              <div className="space-y-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-white/40">Gratuit</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-5xl font-extrabold">0</span>
+                  <span className="text-white/40 text-sm mb-2">FCFA / mois</span>
+                </div>
+                <p className="text-white/40 text-xs">Sans carte bancaire</p>
+              </div>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-3 text-white/70"><Check className="w-4 h-4 text-white/30 flex-shrink-0" /> 5 scripts par mois</li>
+                <li className="flex items-center gap-3 text-white/70"><Check className="w-4 h-4 text-white/30 flex-shrink-0" /> Français uniquement</li>
+                <li className="flex items-center gap-3 text-white/70"><Check className="w-4 h-4 text-white/30 flex-shrink-0" /> Vidéo, article & texte</li>
+                <li className="flex items-center gap-3 text-white/30"><X className="w-4 h-4 text-red-500/40 flex-shrink-0" /> Multilingue (EN, ES, PT)</li>
+                <li className="flex items-center gap-3 text-white/30"><X className="w-4 h-4 text-red-500/40 flex-shrink-0" /> Recherche web en temps réel</li>
+                <li className="flex items-center gap-3 text-white/30"><X className="w-4 h-4 text-red-500/40 flex-shrink-0" /> Prompt JSON miniature</li>
+              </ul>
+              <button onClick={onStart} className="w-full py-3.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 font-semibold text-sm transition-all active:scale-[0.98]">
+                Commencer gratuitement
+              </button>
+            </motion.div>
+
+            {/* Standard */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="relative bg-gradient-to-br from-[#FF0000]/10 to-orange-500/5 border border-[#FF0000]/30 rounded-3xl p-8 space-y-6"
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-[#FF0000] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                <Crown className="w-3 h-3" /> Recommandé
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-5xl font-extrabold">6 900</span>
+                  <span className="text-white/40 text-sm mb-2">FCFA / mois</span>
+                </div>
+                <p className="text-white/40 text-xs">Paiement sécurisé via Monero</p>
+              </div>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-3 text-white/90"><Check className="w-4 h-4 text-green-400 flex-shrink-0" /> 60 scripts par mois</li>
+                <li className="flex items-center gap-3 text-white/90"><Check className="w-4 h-4 text-green-400 flex-shrink-0" /> Français, English, Español, Português</li>
+                <li className="flex items-center gap-3 text-white/90"><Check className="w-4 h-4 text-green-400 flex-shrink-0" /> Vidéo, article & texte</li>
+                <li className="flex items-center gap-3 text-white/90"><Check className="w-4 h-4 text-green-400 flex-shrink-0" /> Recherche web en temps réel</li>
+                <li className="flex items-center gap-3 text-white/90"><Check className="w-4 h-4 text-green-400 flex-shrink-0" /> Prompt JSON miniature (IA image)</li>
+                <li className="flex items-center gap-3 text-white/90"><Check className="w-4 h-4 text-green-400 flex-shrink-0" /> Tout débloqué</li>
+              </ul>
+              <button onClick={onStart} className="w-full py-3.5 rounded-2xl bg-[#FF0000] hover:bg-[#D90000] font-bold text-sm transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,0,0,0.25)]">
+                <span className="flex items-center justify-center gap-2"><Zap className="w-4 h-4" /> Commencer maintenant</span>
+              </button>
+            </motion.div>
+
           </div>
         </div>
       </section>
