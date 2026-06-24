@@ -42,11 +42,6 @@ export default function AppPage({ user, onLogout }: Props) {
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
-  const [checkoutFirstName, setCheckoutFirstName] = useState('');
-  const [checkoutLastName, setCheckoutLastName] = useState('');
-  const [checkoutPhone, setCheckoutPhone] = useState('');
-  const [checkoutCountry, setCheckoutCountry] = useState('CI');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -226,32 +221,17 @@ export default function AppPage({ user, onLogout }: Props) {
 
   const openUpgradeModal = () => {
     setShowUpgradeModal(true);
-    setShowCheckoutForm(false);
     setCheckoutError(null);
-    const parts = user.name.trim().split(' ');
-    setCheckoutFirstName(parts[0] || '');
-    setCheckoutLastName(parts.slice(1).join(' ') || '');
   };
 
   const handleCheckout = async () => {
-    if (!checkoutFirstName || !checkoutLastName || !checkoutPhone) {
-      setCheckoutError('Veuillez remplir tous les champs.');
-      return;
-    }
     setCheckoutLoading(true);
     setCheckoutError(null);
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
-          firstName: checkoutFirstName,
-          lastName: checkoutLastName,
-          phone: checkoutPhone,
-          countryCode: checkoutCountry,
-        }),
+        body: JSON.stringify({ userId: user.id, email: user.email }),
       });
       const data = await res.json();
       if (!res.ok) { setCheckoutError(data.error || 'Erreur lors de la création du paiement.'); return; }
@@ -287,83 +267,43 @@ export default function AppPage({ user, onLogout }: Props) {
                 <button onClick={() => setShowUpgradeModal(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all"><X className="w-4 h-4" /></button>
               </div>
 
-              {!showCheckoutForm ? (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-                      <p className="text-xs font-bold uppercase tracking-widest text-white/40">Gratuit</p>
-                      <p className="text-2xl font-bold">0<span className="text-sm font-normal text-white/40"> FCFA</span></p>
-                      <ul className="space-y-2 text-xs text-white/60">
-                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> 5 scripts / mois</li>
-                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> Français uniquement</li>
-                        <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Recherche web</li>
-                        <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Prompt JSON miniature</li>
-                        <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Multilingue</li>
-                      </ul>
-                    </div>
-                    <div className="bg-gradient-to-br from-[#FF0000]/10 to-orange-500/10 border border-[#FF0000]/30 rounded-2xl p-4 space-y-3 relative">
-                      <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
-                      <p className="text-2xl font-bold">6 900<span className="text-sm font-normal text-white/40"> FCFA/mois</span></p>
-                      <ul className="space-y-2 text-xs text-white/80">
-                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 60 scripts / mois</li>
-                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 4 langues</li>
-                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Recherche web</li>
-                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Prompt JSON miniature</li>
-                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Tout débloqué</li>
-                      </ul>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowCheckoutForm(true)} className="w-full bg-[#FF0000] hover:bg-[#D90000] py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                    <Zap className="w-4 h-4" /> Passer au Standard — 6 900 FCFA/mois
-                  </button>
-                  <p className="text-center text-white/20 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
-                </>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-white/50">Renseignez vos informations pour accéder au paiement Monero.</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-white/40 uppercase tracking-widest">Prénom</label>
-                      <input value={checkoutFirstName} onChange={e => setCheckoutFirstName(e.target.value)} placeholder="Jean" className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#FF0000] transition-all" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-white/40 uppercase tracking-widest">Nom</label>
-                      <input value={checkoutLastName} onChange={e => setCheckoutLastName(e.target.value)} placeholder="Dupont" className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#FF0000] transition-all" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-white/40 uppercase tracking-widest">Téléphone</label>
-                    <div className="flex gap-2">
-                      <select value={checkoutCountry} onChange={e => setCheckoutCountry(e.target.value)} className="bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-3 text-sm focus:outline-none focus:border-[#FF0000] transition-all">
-                        <option value="CI">🇨🇮 CI</option>
-                        <option value="SN">🇸🇳 SN</option>
-                        <option value="ML">🇲🇱 ML</option>
-                        <option value="BF">🇧🇫 BF</option>
-                        <option value="TG">🇹🇬 TG</option>
-                        <option value="BJ">🇧🇯 BJ</option>
-                        <option value="GN">🇬🇳 GN</option>
-                        <option value="CM">🇨🇲 CM</option>
-                        <option value="FR">🇫🇷 FR</option>
-                        <option value="US">🇺🇸 US</option>
-                      </select>
-                      <input value={checkoutPhone} onChange={e => setCheckoutPhone(e.target.value)} placeholder="0700000000" className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#FF0000] transition-all" />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-white/40">Gratuit</p>
+                  <p className="text-2xl font-bold">0<span className="text-sm font-normal text-white/40"> FCFA</span></p>
+                  <ul className="space-y-2 text-xs text-white/60">
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> 5 scripts / mois</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> Français uniquement</li>
+                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Recherche web</li>
+                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Prompt JSON miniature</li>
+                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Multilingue</li>
+                  </ul>
+                </div>
+                <div className="bg-gradient-to-br from-[#FF0000]/10 to-orange-500/10 border border-[#FF0000]/30 rounded-2xl p-4 space-y-3 relative">
+                  <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
+                  <p className="text-2xl font-bold">6 900<span className="text-sm font-normal text-white/40"> FCFA/mois</span></p>
+                  <ul className="space-y-2 text-xs text-white/80">
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 60 scripts / mois</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 4 langues</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Recherche web</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Prompt JSON miniature</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Tout débloqué</li>
+                  </ul>
+                </div>
+              </div>
 
-                  {checkoutError && (
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{checkoutError}
-                    </div>
-                  )}
-
-                  <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                    {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                    {checkoutLoading ? 'Redirection...' : 'Payer en Monero — 6 900 FCFA'}
-                  </button>
-                  <button onClick={() => setShowCheckoutForm(false)} className="w-full text-white/30 hover:text-white/60 text-xs text-center transition-all">← Retour</button>
+              {checkoutError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{checkoutError}
                 </div>
               )}
+
+              <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {checkoutLoading ? 'Redirection vers le paiement...' : 'Passer au Standard — 6 900 FCFA/mois'}
+              </button>
+              <p className="text-center text-white/20 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
 
             </motion.div>
           </motion.div>
