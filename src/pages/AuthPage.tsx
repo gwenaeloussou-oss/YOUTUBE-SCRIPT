@@ -138,9 +138,11 @@ export default function AuthPage({ onBack, onAuth }: Props) {
           options: {
             data: {
               name: name.trim(),
-              phone: `${selectedCountry.dial}${phone.replace(/\s/g, '')}`,
+              phone_local: phone.replace(/\s/g, ''),
+              phone_full: `${selectedCountry.dial}${phone.replace(/\s/g, '')}`,
               dial_code: selectedCountry.dial,
-              country: selectedCountry.name,
+              country_name: selectedCountry.name,
+              country_code: selectedCountry.code,
             },
           },
         });

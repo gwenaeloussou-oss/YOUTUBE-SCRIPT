@@ -26,10 +26,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const nameParts = fullName.trim().split(' ');
   const firstName = nameParts[0];
   const lastName = nameParts.slice(1).join(' ') || nameParts[0];
-  const phone = (profile?.phone || '00000000').replace(/\D/g, '') || '00000000';
+  const phoneLocal = profile?.phone?.replace(/\D/g, '') || '';
   const countryCode = profile?.country || 'CI';
 
   const appUrl = process.env.APP_URL || 'https://youscript-ai.vercel.app';
+
+  // Build request body — only include phone if we have valid data
+  const body: Record<string, unknown> = {
+    product_id: PRODUCT_ID,
+    email,
+    first_name: firstName,
+    last_name: lastName,
+    redirect_url: `${appUrl}/?payment=success`,
+    custom_metadata: { userId },
+  };
+  if (phoneLocal.length >= 6) {
+    body.phone = { number: phoneLocal, country_code: countryCode };
+  }
 
   try {
     const response = await fetch('https://api.chariow.com/v1/checkout', {
@@ -38,15 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Authorization: `Bearer ${CHARIOW_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        product_id: PRODUCT_ID,
-        email,
-        first_name: firstName,
-        last_name: lastName,
-        phone: { number: phone, country_code: countryCode },
-        redirect_url: `${appUrl}/?payment=success`,
-        custom_metadata: { userId },
-      }),
+      body: JSON.stringify(body),
     });
 
     const data = await response.json();
