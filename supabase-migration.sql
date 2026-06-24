@@ -1,5 +1,5 @@
 -- ============================================================
--- YouBoost IA — Migration Supabase
+-- YouScript Booster — Migration Supabase
 -- Colle ce SQL dans : Supabase Dashboard > SQL Editor > New query
 -- ============================================================
 
@@ -10,7 +10,7 @@ CREATE TABLE public.profiles (
   phone text,
   dial_code text,
   country text,
-  plan text NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro')),
+  plan text NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'standard')),
   created_at timestamptz DEFAULT now()
 );
 
@@ -75,3 +75,10 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================
+-- Mise à jour plan pro → standard (si tables déjà créées)
+-- ============================================================
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_plan_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_plan_check CHECK (plan IN ('free', 'standard'));
+UPDATE public.profiles SET plan = 'standard' WHERE plan = 'pro';

@@ -1,16 +1,16 @@
 import { supabase } from './supabase';
 import type { HistoryItem } from '../components/HistoryDrawer';
 
-export async function getProfile(userId: string): Promise<{ plan: 'free' | 'pro' }> {
+export async function getProfile(userId: string): Promise<{ plan: 'free' | 'standard' }> {
   const { data } = await supabase
     .from('profiles')
     .select('plan')
     .eq('id', userId)
     .single();
-  return { plan: (data?.plan as 'free' | 'pro') ?? 'free' };
+  return { plan: (data?.plan as 'free' | 'standard') ?? 'free' };
 }
 
-export async function updatePlan(userId: string, plan: 'free' | 'pro'): Promise<void> {
+export async function updatePlan(userId: string, plan: 'free' | 'standard'): Promise<void> {
   await supabase.from('profiles').update({ plan }).eq('id', userId);
 }
 

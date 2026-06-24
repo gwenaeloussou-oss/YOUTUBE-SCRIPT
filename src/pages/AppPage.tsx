@@ -10,6 +10,7 @@ import HistoryDrawer, { type HistoryItem } from '../components/HistoryDrawer';
 import * as db from '../lib/db';
 
 const FREE_LIMIT = 5;
+const STANDARD_LIMIT = 60;
 
 type ScriptResult = {
   titre: string;
@@ -38,9 +39,16 @@ const LANGUAGES = [
 type Props = { user: LoggedUser; onLogout: () => void };
 
 export default function AppPage({ user, onLogout }: Props) {
-  const [plan, setPlan] = useState<'free' | 'pro'>('free');
+  const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
+  const [checkoutFirstName, setCheckoutFirstName] = useState('');
+  const [checkoutLastName, setCheckoutLastName] = useState('');
+  const [checkoutPhone, setCheckoutPhone] = useState('');
+  const [checkoutCountry, setCheckoutCountry] = useState('CI');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -61,7 +69,8 @@ export default function AppPage({ user, onLogout }: Props) {
   const [copiedThumbPrompt, setCopiedThumbPrompt] = useState(false);
   const [loadingStep, setLoadingStep] = useState<'transcript' | 'writing' | null>(null);
 
-  const isPro = plan === 'pro';
+  const isStandard = plan === 'standard';
+  const scriptLimit = isStandard ? STANDARD_LIMIT : FREE_LIMIT;
 
   // Load profile, usage and history from Supabase on mount
   useEffect(() => {
@@ -108,7 +117,7 @@ export default function AppPage({ user, onLogout }: Props) {
   };
 
   const generateScript = async (regenerateStyle = false) => {
-    if (!isPro && monthlyUsage >= FREE_LIMIT) { setShowUpgradeModal(true); return; }
+    if (monthlyUsage >= scriptLimit) { setShowUpgradeModal(true); return; }
     if (sourceType === 'video' && !url.includes('youtube.com') && !url.includes('youtu.be')) {
       setError('Veuillez entrer un lien YouTube valide.'); return;
     }
@@ -153,7 +162,7 @@ export default function AppPage({ user, onLogout }: Props) {
           wordCount,
           options: { title: true, description: true, hook: true, thumbnail: true },
           regenerateStyle,
-          webSearch: isPro && webSearch,
+          webSearch: isStandard && webSearch,
         }),
       });
 
@@ -215,14 +224,46 @@ export default function AppPage({ user, onLogout }: Props) {
     }
   };
 
-  const handleUpgrade = async () => {
-    // TODO: connecter Stripe ici
-    await db.updatePlan(user.id, 'pro');
-    setPlan('pro');
-    setShowUpgradeModal(false);
+  const openUpgradeModal = () => {
+    setShowUpgradeModal(true);
+    setShowCheckoutForm(false);
+    setCheckoutError(null);
+    const parts = user.name.trim().split(' ');
+    setCheckoutFirstName(parts[0] || '');
+    setCheckoutLastName(parts.slice(1).join(' ') || '');
   };
 
-  const remainingScripts = Math.max(0, FREE_LIMIT - monthlyUsage);
+  const handleCheckout = async () => {
+    if (!checkoutFirstName || !checkoutLastName || !checkoutPhone) {
+      setCheckoutError('Veuillez remplir tous les champs.');
+      return;
+    }
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          firstName: checkoutFirstName,
+          lastName: checkoutLastName,
+          phone: checkoutPhone,
+          countryCode: checkoutCountry,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setCheckoutError(data.error || 'Erreur lors de la création du paiement.'); return; }
+      if (data.checkout_url) window.location.href = data.checkout_url;
+    } catch {
+      setCheckoutError('Erreur réseau. Veuillez réessayer.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const remainingScripts = Math.max(0, scriptLimit - monthlyUsage);
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white font-sans overflow-x-hidden">
@@ -232,49 +273,98 @@ export default function AppPage({ user, onLogout }: Props) {
         {showUpgradeModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowUpgradeModal(false)}>
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-[#111] border border-white/10 rounded-3xl p-8 space-y-6">
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
                     <Crown className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="font-bold text-lg">Passer à Pro</h2>
+                    <h2 className="font-bold text-lg">Passer au Standard</h2>
                     <p className="text-white/40 text-xs">Débloquez toutes les fonctionnalités</p>
                   </div>
                 </div>
                 <button onClick={() => setShowUpgradeModal(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all"><X className="w-4 h-4" /></button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/40">Gratuit</p>
-                  <p className="text-2xl font-bold">0<span className="text-sm font-normal text-white/40"> FCFA</span></p>
-                  <ul className="space-y-2 text-xs text-white/60">
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> 5 scripts / mois</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> Français uniquement</li>
-                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Recherche web</li>
-                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Prompt JSON miniature</li>
-                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Multilingue</li>
-                  </ul>
-                </div>
-                <div className="bg-gradient-to-br from-[#FF0000]/10 to-orange-500/10 border border-[#FF0000]/30 rounded-2xl p-4 space-y-3 relative">
-                  <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Pro</p>
-                  <p className="text-2xl font-bold">6 900<span className="text-sm font-normal text-white/40"> FCFA/mois</span></p>
-                  <ul className="space-y-2 text-xs text-white/80">
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Scripts illimités</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 4 langues</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Recherche web</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Prompt JSON miniature</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Tout débloqué</li>
-                  </ul>
-                </div>
-              </div>
+              {!showCheckoutForm ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+                      <p className="text-xs font-bold uppercase tracking-widest text-white/40">Gratuit</p>
+                      <p className="text-2xl font-bold">0<span className="text-sm font-normal text-white/40"> FCFA</span></p>
+                      <ul className="space-y-2 text-xs text-white/60">
+                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> 5 scripts / mois</li>
+                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> Français uniquement</li>
+                        <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Recherche web</li>
+                        <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Prompt JSON miniature</li>
+                        <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Multilingue</li>
+                      </ul>
+                    </div>
+                    <div className="bg-gradient-to-br from-[#FF0000]/10 to-orange-500/10 border border-[#FF0000]/30 rounded-2xl p-4 space-y-3 relative">
+                      <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
+                      <p className="text-2xl font-bold">6 900<span className="text-sm font-normal text-white/40"> FCFA/mois</span></p>
+                      <ul className="space-y-2 text-xs text-white/80">
+                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 60 scripts / mois</li>
+                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 4 langues</li>
+                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Recherche web</li>
+                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Prompt JSON miniature</li>
+                        <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Tout débloqué</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowCheckoutForm(true)} className="w-full bg-[#FF0000] hover:bg-[#D90000] py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                    <Zap className="w-4 h-4" /> Passer au Standard — 6 900 FCFA/mois
+                  </button>
+                  <p className="text-center text-white/20 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-white/50">Renseignez vos informations pour accéder au paiement Monero.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-white/40 uppercase tracking-widest">Prénom</label>
+                      <input value={checkoutFirstName} onChange={e => setCheckoutFirstName(e.target.value)} placeholder="Jean" className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#FF0000] transition-all" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-white/40 uppercase tracking-widest">Nom</label>
+                      <input value={checkoutLastName} onChange={e => setCheckoutLastName(e.target.value)} placeholder="Dupont" className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#FF0000] transition-all" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-white/40 uppercase tracking-widest">Téléphone</label>
+                    <div className="flex gap-2">
+                      <select value={checkoutCountry} onChange={e => setCheckoutCountry(e.target.value)} className="bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-3 text-sm focus:outline-none focus:border-[#FF0000] transition-all">
+                        <option value="CI">🇨🇮 CI</option>
+                        <option value="SN">🇸🇳 SN</option>
+                        <option value="ML">🇲🇱 ML</option>
+                        <option value="BF">🇧🇫 BF</option>
+                        <option value="TG">🇹🇬 TG</option>
+                        <option value="BJ">🇧🇯 BJ</option>
+                        <option value="GN">🇬🇳 GN</option>
+                        <option value="CM">🇨🇲 CM</option>
+                        <option value="FR">🇫🇷 FR</option>
+                        <option value="US">🇺🇸 US</option>
+                      </select>
+                      <input value={checkoutPhone} onChange={e => setCheckoutPhone(e.target.value)} placeholder="0700000000" className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#FF0000] transition-all" />
+                    </div>
+                  </div>
 
-              <button onClick={handleUpgrade} className="w-full bg-[#FF0000] hover:bg-[#D90000] py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                <Zap className="w-4 h-4" /> Passer à Pro — 6 900 FCFA/mois
-              </button>
-              <p className="text-center text-white/20 text-xs">Paiement sécurisé · Résiliable à tout moment</p>
+                  {checkoutError && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{checkoutError}
+                    </div>
+                  )}
+
+                  <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                    {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                    {checkoutLoading ? 'Redirection...' : 'Payer en Monero — 6 900 FCFA'}
+                  </button>
+                  <button onClick={() => setShowCheckoutForm(false)} className="w-full text-white/30 hover:text-white/60 text-xs text-center transition-all">← Retour</button>
+                </div>
+              )}
+
             </motion.div>
           </motion.div>
         )}
@@ -294,15 +384,15 @@ export default function AppPage({ user, onLogout }: Props) {
               {history.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF0000] rounded-full text-[9px] font-bold flex items-center justify-center">{history.length > 9 ? '9+' : history.length}</span>}
             </button>
 
-            {isPro ? (
+            {isStandard ? (
               <div className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl">
                 <Crown className="w-3.5 h-3.5 text-yellow-400" />
-                <span className="text-xs font-bold text-yellow-400">PRO</span>
+                <span className="text-xs font-bold text-yellow-400">STANDARD</span>
               </div>
             ) : (
-              <button onClick={() => setShowUpgradeModal(true)} className="flex items-center gap-1.5 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/50 hover:text-white text-xs font-semibold">
+              <button onClick={openUpgradeModal} className="flex items-center gap-1.5 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/50 hover:text-white text-xs font-semibold">
                 <Crown className="w-3.5 h-3.5" />
-                <span className="hidden sm:block">Pro</span>
+                <span className="hidden sm:block">Standard</span>
                 <span className="text-white/30 hidden sm:block">·</span>
                 <span className="text-[#FF0000] hidden sm:block">{remainingScripts}/{FREE_LIMIT}</span>
               </button>
@@ -330,22 +420,23 @@ export default function AppPage({ user, onLogout }: Props) {
 
           <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-8 backdrop-blur-sm shadow-2xl">
 
-            {/* Free usage banner */}
-            {!isPro && (
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {Array.from({ length: FREE_LIMIT }).map((_, i) => (
-                      <div key={i} className={`w-2 h-2 rounded-full ${i < monthlyUsage ? 'bg-[#FF0000]' : 'bg-white/20'}`} />
-                    ))}
-                  </div>
-                  <span className="text-xs text-white/50">{monthlyUsage}/{FREE_LIMIT} scripts ce mois</span>
+            {/* Usage banner */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(scriptLimit, 10) }).map((_, i) => {
+                    const threshold = isStandard ? Math.floor(monthlyUsage / scriptLimit * 10) : monthlyUsage;
+                    return <div key={i} className={`w-2 h-2 rounded-full ${i < threshold ? 'bg-[#FF0000]' : 'bg-white/20'}`} />;
+                  })}
                 </div>
-                <button onClick={() => setShowUpgradeModal(true)} className="text-xs font-semibold text-[#FF0000] hover:underline flex items-center gap-1">
-                  <Crown className="w-3 h-3" /> Passer à Pro
-                </button>
+                <span className="text-xs text-white/50">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
               </div>
-            )}
+              {!isStandard && (
+                <button onClick={openUpgradeModal} className="text-xs font-semibold text-[#FF0000] hover:underline flex items-center gap-1">
+                  <Crown className="w-3 h-3" /> Passer au Standard
+                </button>
+              )}
+            </div>
 
             {/* Source type */}
             <div className="flex bg-[#1a1a1a] border border-white/10 rounded-2xl p-1 gap-1">
@@ -385,7 +476,7 @@ export default function AppPage({ user, onLogout }: Props) {
               <label className="text-xs uppercase tracking-widest font-semibold text-white/40 flex items-center gap-2"><Languages className="w-3 h-3" /> Langue du script</label>
               <div className="grid grid-cols-4 gap-2">
                 {LANGUAGES.map(lang => {
-                  const locked = !isPro && lang.id !== 'Français';
+                  const locked = !isStandard && lang.id !== 'Français';
                   return (
                     <button key={lang.id} onClick={() => locked ? setShowUpgradeModal(true) : setLanguage(lang.id)} className={`relative py-2 px-3 rounded-xl text-sm font-medium transition-all border ${language === lang.id && !locked ? 'bg-[#FF0000] border-[#FF0000] text-white shadow-[0_0_20px_rgba(255,0,0,0.3)]' : locked ? 'bg-white/3 border-white/5 text-white/20 cursor-pointer' : 'bg-white/5 border-white/5 hover:border-white/20 text-white/60'}`}>
                       {locked && <Lock className="absolute top-1 right-1 w-2.5 h-2.5 text-white/20" />}
@@ -419,7 +510,7 @@ export default function AppPage({ user, onLogout }: Props) {
             </div>
 
             {/* Web search */}
-            {isPro ? (
+            {isStandard ? (
               <button onClick={() => setWebSearch(w => !w)} className={`w-full flex items-center gap-3 p-4 rounded-2xl border transition-all ${webSearch ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60 hover:border-white/20'}`}>
                 <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all ${webSearch ? 'bg-blue-500' : 'border border-white/20'}`}>
                   {webSearch && <Check className="w-3 h-3 text-white" />}
@@ -436,7 +527,7 @@ export default function AppPage({ user, onLogout }: Props) {
                 <Globe className="w-4 h-4 flex-shrink-0" />
                 <div className="text-left">
                   <span className="text-sm font-medium block">Recherche web</span>
-                  <span className="text-[11px] opacity-60">Disponible en version Pro</span>
+                  <span className="text-[11px] opacity-60">Disponible en version Standard</span>
                 </div>
                 <Crown className="w-4 h-4 ml-auto text-yellow-500/50" />
               </button>
@@ -563,16 +654,16 @@ export default function AppPage({ user, onLogout }: Props) {
                 <div className="space-y-4 pt-8 border-t border-white/10">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs uppercase tracking-widest font-bold text-white/40 flex items-center gap-2"><Braces className="w-3 h-3" /> Prompt Miniature JSON</h3>
-                    {isPro && thumbPrompt.json && (
+                    {isStandard && thumbPrompt.json && (
                       <button onClick={() => { navigator.clipboard.writeText(thumbPrompt.json!); setCopiedThumbPrompt(true); setTimeout(() => setCopiedThumbPrompt(false), 2000); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/50 hover:text-white transition-all text-xs font-medium">
                         {copiedThumbPrompt ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} {copiedThumbPrompt ? 'Copié !' : 'Copier le JSON'}
                       </button>
                     )}
                   </div>
 
-                  {!isPro ? (
+                  {!isStandard ? (
                     <button onClick={() => setShowUpgradeModal(true)} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/3 text-white/30 hover:border-white/20 transition-all text-sm">
-                      <Lock className="w-4 h-4" /> Disponible en version Pro <Crown className="w-4 h-4 text-yellow-500/50" />
+                      <Lock className="w-4 h-4" /> Disponible en version Standard <Crown className="w-4 h-4 text-yellow-500/50" />
                     </button>
                   ) : (
                     <>
