@@ -152,7 +152,11 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
       if (sourceType === 'article') {
         setLoadingStep('transcript');
         const r = await fetch(`/api/article?url=${encodeURIComponent(articleUrl)}`);
-        if (!r.ok) throw new Error((await r.json()).error || "Impossible de lire l'article.");
+        if (!r.ok) {
+          let msg = "Impossible de lire l'article.";
+          try { msg = (await r.json()).error || msg; } catch { /* timeout */ }
+          throw new Error(msg);
+        }
         articleText = (await r.json()).text ?? '';
       }
 
@@ -174,9 +178,16 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
         }),
       });
 
-      if (!generateRes.ok) throw new Error((await generateRes.json()).error || 'Erreur de génération');
+      if (!generateRes.ok) {
+        let errMsg = 'La génération a pris trop de temps. Réessayez avec moins de mots ou sans recherche web.';
+        try { errMsg = (await generateRes.json()).error || errMsg; } catch { /* réponse non-JSON (timeout Vercel) */ }
+        throw new Error(errMsg);
+      }
 
-      const data = cleanScriptResult(await generateRes.json() as ScriptResult);
+      let json: ScriptResult;
+      try { json = await generateRes.json() as ScriptResult; }
+      catch { throw new Error('Réponse invalide du serveur. Réessayez.'); }
+      const data = cleanScriptResult(json);
       setResult(data);
       setThumbPrompt({ loading: false, json: null, error: null });
 

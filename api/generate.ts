@@ -86,67 +86,114 @@ Respond ONLY with valid JSON:
   }
   // ────────────────────────────────────────────────────────────────────────
 
+  // ── BUILD SOURCE BLOCK ──────────────────────────────────────────────────────
   let sourceBlock: string;
+  let sourceType: 'full_transcript' | 'metadata_only' | 'article' | 'url_only';
+
   if (articleText) {
-    sourceBlock = `Here is the source article to analyze:\n\n---\n${articleText.substring(0, 10000)}\n---\n\nAnalyze the topic, structure, key arguments and tone of this article.`;
+    sourceType = 'article';
+    sourceBlock = `════════════════════════════════════════
+SOURCE ARTICLE (your ONLY content base):
+════════════════════════════════════════
+${articleText.substring(0, 12000)}
+════════════════════════════════════════`;
   } else if (transcript) {
     const isMetadata = transcript.startsWith('VIDEO TITLE:');
-    sourceBlock = isMetadata
-      ? `Here is the metadata of the source YouTube video:\n\n---\n${transcript.substring(0, 10000)}\n---\n\nBased on the title, description and keywords, deeply analyze the topic, target audience, key arguments and tone.`
-      : `Here is the full transcript of the source YouTube video:\n\n---\n${transcript.substring(0, 10000)}\n---\n\nAnalyze the topic, structure, key arguments and tone of this transcript.`;
+    sourceType = isMetadata ? 'metadata_only' : 'full_transcript';
+    sourceBlock = `════════════════════════════════════════
+${isMetadata ? 'SOURCE VIDEO METADATA' : 'SOURCE VIDEO — FULL TRANSCRIPT'} (your ONLY content base):
+════════════════════════════════════════
+${transcript.substring(0, 12000)}
+════════════════════════════════════════`;
   } else {
-    sourceBlock = `Source YouTube URL: ${url}\n\nAnalyze the probable topic of this video and create an original script on this subject.`;
+    sourceType = 'url_only';
+    sourceBlock = `════════════════════════════════════════
+SOURCE VIDEO URL: ${url}
+════════════════════════════════════════
+No transcript available. Use the URL topic only.`;
   }
 
+  // ── WEB SEARCH ENRICHMENT ────────────────────────────────────────────────
   let webSearchBlock = '';
   if (effectiveWebSearch && process.env.BRAVE_SEARCH_API_KEY) {
     try {
       const query = buildSearchQuery({ articleText, transcript, url });
       const searchResults = await braveWebSearch(query, process.env.BRAVE_SEARCH_API_KEY, effectiveLanguage);
-      if (searchResults) webSearchBlock = `\n\nWEB SEARCH RESULTS (use to enrich with up-to-date facts — only what is relevant and credible):\n\n${searchResults}`;
+      if (searchResults) {
+        webSearchBlock = `
+
+════════════════════════════════════════
+WEB SEARCH RESULTS — use ONLY to add missing stats, dates, or facts that complement the source. Never use to change the subject.
+════════════════════════════════════════
+${searchResults}
+════════════════════════════════════════`;
+      }
     } catch (err) { console.warn('Web search skipped:', err); }
   }
 
+  // ── CORE INSTRUCTION depending on source quality ─────────────────────────
+  const coreInstruction = sourceType === 'full_transcript'
+    ? `Your mission: REWRITE AND IMPROVE this video's transcript as a viral YouTube script.
+ABSOLUTE RULES:
+— Every argument, fact, example, stat, anecdote, and insight MUST come from the transcript above. Do NOT invent.
+— Keep the EXACT same subject, depth, and point of view as the original video.
+— You may ONLY change: structure, delivery style, hooks, transitions, and word choice to make it more engaging.
+— If web results are provided, use them ONLY to add specific missing stats or dates that strengthen existing points — never to shift the topic.`
+    : sourceType === 'metadata_only'
+    ? `Your mission: Write a YouTube script strictly about the topic described in the video metadata above.
+ABSOLUTE RULES:
+— The subject is FIXED by the title and description. Stay 100% on this exact topic.
+— Match the depth, angle, and specificity of the original video as described.
+— If web results are provided, use them to add concrete facts that match the described topic.
+— Do NOT generalize or drift to adjacent topics.`
+    : sourceType === 'article'
+    ? `Your mission: REWRITE this article as a viral YouTube script.
+ABSOLUTE RULES:
+— Every fact, argument, and example MUST come from the article above. Do NOT invent.
+— Keep the exact same subject and conclusions as the source article.
+— Use web results only to add missing supporting stats, not to change the subject.`
+    : `Your mission: Write a script about the topic of this YouTube video.
+Stay as close as possible to what the URL suggests about the subject.`;
+
   const userPrompt = `${sourceBlock}${webSearchBlock}
 
-CRITICAL LANGUAGE REQUIREMENT: ${langInstruction}
+${coreInstruction}
 
-Generate a highly engaging, original YouTube script that grabs viewers in the first 3 seconds and keeps them watching until the end.
+LANGUAGE: ${langInstruction}
+TARGET LENGTH: ~${wordCount} words total (intro + all body sections + conclusion)
+STYLE: ${regenerateStyle ? 'More explosive and dynamic than the original — different angle, same content' : 'Conversational and authentic — like a trusted friend explaining something fascinating'}
 
-TARGET LENGTH: ~${wordCount} words total (intro + all body sections + conclusion combined)
-STYLE: ${regenerateStyle ? 'Explosive and ultra-dynamic — totally different angle from the source, surprising and provocative' : 'Authentic and conversational — like a trusted friend revealing a fascinating secret, not a corporate presentation'}
-MODULES TO INCLUDE: ${optionsList}
+YOUTUBE SCRIPT RULES (apply on top of the source content):
+1. HOOK: Open with the most shocking or intriguing point FROM the source. Never "In this video..." or "Today...".
+2. OPEN LOOP immediately after the hook: tease the biggest revelation without giving it away.
+3. VOICE: Write to ONE person. Use "you", contractions, everyday language. Zero corporate tone.
+4. RETENTION: Add a curiosity hook before each new section.
+5. SPECIFICITY: Every claim must have a concrete example or number FROM the source (or web results if provided).
+6. EMOTIONAL ARC: Curiosity → understanding → actionable insight.
+7. CONCLUSION: Summarize the single most important point from the source in 1-2 powerful sentences.
+8. CTA: Natural invitation to subscribe or comment — tied to the video's specific topic.
+9. ZERO markdown: no **bold**, no ## headers, no bullet points. Pure flowing spoken prose.
 
-MANDATORY WRITING RULES:
-1. HOOK: Open with a jaw-dropping stat, provocative question, bold claim, or micro-story. NEVER "In this video..." or "Today I'm going to...".
-2. OPEN LOOP: Tease the biggest payoff without revealing it.
-3. AUTHENTIC VOICE: Write to ONE real person. "you", contractions, everyday vocabulary. Zero corporate tone.
-4. RETENTION LOOPS every 60-90 seconds: Curiosity hooks before each section.
-5. PATTERN INTERRUPTS: At least 2 surprising facts or counterintuitive twists.
-6. CONCRETE EXAMPLES: Every abstract idea grounded in a specific example or mini-story.
-7. DATA & CREDIBILITY: Use stats and quotes from the source verbatim.
-8. EMOTIONAL ARC: Curiosity → understanding → hope.
-9. CONCLUSION: Key insight in 1-2 powerful sentences.
-10. CTA: Natural and logical, not a desperate plea.
+CRITICAL: Every single word of the JSON output must be in ${effectiveLanguage}.
 
-FORMATTING RULE: ZERO markdown — no **bold**, no ## headers, no bullet points, no section labels. Pure flowing prose for voiceover.
-
-CRITICAL: Every word in the JSON must be in ${effectiveLanguage}.
-
-Respond ONLY with valid JSON:
+Respond ONLY with valid JSON — no text before or after:
 {
-  "titre": "catchy curiosity-driven title in ${effectiveLanguage} (max 70 chars)",
-  "description": "Full YouTube SEO description in ${effectiveLanguage}: (1) 2-3 line hook, (2) 150-200 word body with keyword 2-3 times, (3) 3-5 hashtags. All in ${effectiveLanguage}.",
-  "hook": "first 3-second hook in ${effectiveLanguage}",
+  "titre": "curiosity-driven title in ${effectiveLanguage} that matches the source topic exactly (max 70 chars)",
+  "description": "Full YouTube SEO description in ${effectiveLanguage}: hook (2-3 lines) + summary (150-200 words, keyword 2-3×) + hashtags. All about the source topic.",
+  "hook": "opening hook sentence in ${effectiveLanguage} — the most striking point FROM the source",
   "script_complet": {
-    "intro": "hook + open loop + credibility setup in ${effectiveLanguage} (~15% of word count)",
-    "developpement": ["body section 1 with retention loop in ${effectiveLanguage}", "body section 2 with pattern interrupt in ${effectiveLanguage}", "body section 3 with emotional peak in ${effectiveLanguage}"],
-    "conclusion": "key insight summary + emotional payoff in ${effectiveLanguage}",
-    "cta": "natural call to action in ${effectiveLanguage}"
+    "intro": "hook + open loop based strictly on the source content (~15% of word count) in ${effectiveLanguage}",
+    "developpement": [
+      "body section 1 — key point FROM the source with concrete example, in ${effectiveLanguage}",
+      "body section 2 — key point FROM the source with retention hook, in ${effectiveLanguage}",
+      "body section 3 — key point FROM the source with emotional peak, in ${effectiveLanguage}"
+    ],
+    "conclusion": "summary of the main insight FROM the source + emotional payoff, in ${effectiveLanguage}",
+    "cta": "natural call to action tied to this specific topic, in ${effectiveLanguage}"
   },
   "idee_miniature": {
     "background": "#hexcolor",
-    "text": "short punchy thumbnail text in ${effectiveLanguage} (max 5 words)",
+    "text": "thumbnail text in ${effectiveLanguage} (max 5 words, matches the source topic)",
     "elements": ["visual element 1", "visual element 2", "visual element 3"]
   }
 }`;
@@ -155,7 +202,7 @@ Respond ONLY with valid JSON:
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 8096,
-      system: `You are a world-class YouTube scriptwriter with 10+ years of experience crafting viral content. You master retention psychology, open loops, pattern interrupts, and emotional storytelling. Your scripts feel like conversations, not lectures. You always return valid JSON only, with no text before or after. ${langInstruction}`,
+      system: `You are an expert YouTube scriptwriter. Your specialty is taking existing video transcripts or articles and rewriting them into viral YouTube scripts — keeping ALL the original content, facts, and insights, while dramatically improving the structure, hooks, and delivery. You NEVER invent facts or change the subject. You always return valid JSON only, with no text before or after. ${langInstruction}`,
       messages: [{ role: 'user', content: userPrompt }],
     });
     const content = message.content[0];
