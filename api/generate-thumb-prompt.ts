@@ -58,6 +58,7 @@ Instructions:
 Return ONLY this JSON (no markdown, no code block, no explanation):
 
 {
+  "langue_miniature": "${langLabel} — ⚠️ TOUS les textes visibles sur la miniature doivent être rédigés en ${langLabel}. Bannière, titre, overlays : tout en ${langLabel}.",
   "banner": "[label d'urgence le plus percutant EN ${langLabel} — ex: CHOC / RÉVÉLATION / EXCLUSIF]",
   "banner_style": "[description du style de bannière EN ${langLabel}]",
   "titre_miniature": {
@@ -93,7 +94,7 @@ Return ONLY this JSON (no markdown, no code block, no explanation):
     "ratio": "16:9 YouTube (1280x720)",
     "style_global": "[style visuel global EN ${langLabel}]"
   },
-  "prompt_image_final": "[150-200 word image generation prompt IN ENGLISH ONLY for Midjourney/DALL-E/Flux. Describe: main subject with exact expression and pose, background atmosphere with specific colors and elements, lighting setup, composition, emotional impact, visual style. Self-contained. No text or letters in the generated image.]"
+  "prompt_image_final": "[150-200 word image generation prompt IN ENGLISH ONLY for Midjourney/DALL-E/Flux. Describe: main subject with exact expression and pose, background atmosphere with specific colors and elements, lighting setup, composition, emotional impact, visual style. Self-contained. IMPORTANT FOR THE EDITOR: all visible text on the final thumbnail (banner, title, overlays) must be written in ${langLabel} — not in English. No text or letters inside the generated image itself.]"
 }`;
 
   try {
