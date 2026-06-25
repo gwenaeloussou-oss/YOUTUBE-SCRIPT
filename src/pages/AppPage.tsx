@@ -566,8 +566,8 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                   <div className="absolute inset-0 blur-xl bg-[#FF0000]/20 animate-pulse" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-bold">{loadingStep === 'transcript' ? (sourceType === 'article' ? "Lecture de l'article..." : 'Lecture de la vidéo...') : 'Claude écrit votre script...'}</h3>
-                  <p className="text-white/40 text-sm">{loadingStep === 'transcript' ? (sourceType === 'article' ? "Extraction du contenu en cours." : 'Récupération de la transcription YouTube.') : 'Claude analyse le contenu et rédige un script original.'}</p>
+                  <h3 className="text-xl font-bold">{loadingStep === 'transcript' ? (sourceType === 'article' ? "Lecture de l'article..." : 'Lecture de la vidéo...') : 'Écriture du script en cours...'}</h3>
+                  <p className="text-white/40 text-sm">{loadingStep === 'transcript' ? (sourceType === 'article' ? "Extraction du contenu en cours." : 'Récupération de la transcription YouTube.') : 'Notre IA analyse le contenu et rédige un script original.'}</p>
                 </div>
               </motion.div>
             )}

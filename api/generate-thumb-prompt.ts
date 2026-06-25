@@ -32,58 +32,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   };
   const bannerHint = bannerOptions[language] ?? `BREAKING / EXCLUSIVE (adapt to ${language})`;
 
+  const langLabel = language; // e.g. "Français", "English", "Español"
+
   const prompt = `Analyze this YouTube video script and generate a complete structured JSON thumbnail prompt.
 
-VIDEO LANGUAGE: ${language}
+VIDEO LANGUAGE: ${langLabel}
 TITLE: ${titre}
 HOOK: ${hook}
 DESCRIPTION: ${description ?? ''}
 FULL SCRIPT:
 ${fullScript.substring(0, 6000)}
 
+══════════════════════════════════════════════════════
+LANGUAGE RULE — MANDATORY:
+Every single text value in the JSON MUST be written in ${langLabel}.
+The ONLY exception is "prompt_image_final" which MUST be in English.
+Do NOT use English words anywhere else. Translate everything to ${langLabel}.
+══════════════════════════════════════════════════════
+
 Instructions:
 1. Deeply analyze the script: extract main subjects/characters, dominant country or location, emotional tone, narrative tension, core message.
 2. Generate a thumbnail concept that maximizes click-through rate — dramatic, emotional, impossible to ignore.
-3. Adapt ALL text fields (banner, titre_miniature, overlays) to the language "${language}", EXCEPT "prompt_image_final" which MUST always be written in English.
-4. Available banner options for ${language}: ${bannerHint}
+3. Available banner options for ${langLabel}: ${bannerHint}
 
 Return ONLY this JSON (no markdown, no code block, no explanation):
 
 {
-  "banner": "[most impactful urgency label in ${language}]",
-  "banner_style": "bright red background, bold white text, rounded corners, top centered",
+  "banner": "[label d'urgence le plus percutant EN ${langLabel} — ex: CHOC / RÉVÉLATION / EXCLUSIF]",
+  "banner_style": "[description du style de bannière EN ${langLabel}]",
   "titre_miniature": {
-    "ligne_1": "[SHOCK KEYWORD in CAPS, 2-3 words max, in ${language}]",
-    "ligne_2": "[short complement, 3-4 words in ${language}]",
-    "style": "neon yellow for ligne_1, white with black outline for ligne_2, ultra-bold Impact or Anton font"
+    "ligne_1": "[MOT CHOC EN MAJUSCULES, 2-3 mots max, EN ${langLabel}]",
+    "ligne_2": "[complément court, 3-4 mots EN ${langLabel}]",
+    "style": "[description du style typographique EN ${langLabel}]"
   },
   "personnages": [
     {
-      "qui": "[name or visual description of the main subject]",
-      "position": "left | center | right",
-      "expression": "[exact emotion: shocked / triumphant / furious / determined / betrayed / terrified]",
-      "taille": "dominant | secondary",
-      "pose": "facing camera | profile looking toward center | bust shot | full body"
+      "qui": "[nom ou description visuelle du sujet principal EN ${langLabel}]",
+      "position": "[gauche | centre | droite — EN ${langLabel}]",
+      "expression": "[émotion exacte EN ${langLabel}: choqué / triomphant / furieux / déterminé / trahi / terrifié]",
+      "taille": "[dominant | secondaire — EN ${langLabel}]",
+      "pose": "[face caméra | profil vers le centre | buste | corps entier — EN ${langLabel}]"
     }
   ],
   "background": {
-    "ambiance": "[apocalyptic | dramatic | triumphant | revelatory | urgent | explosive]",
-    "couleurs": "[dominant color palette]",
-    "elements": ["[specific visual element 1]", "[specific visual element 2]", "[specific visual element 3]"],
-    "ciel": "[dramatic sky or atmosphere]"
+    "ambiance": "[ambiance EN ${langLabel}: apocalyptique | dramatique | triomphant | révélateur | urgent | explosif]",
+    "couleurs": "[palette de couleurs dominantes EN ${langLabel}]",
+    "elements": ["[élément visuel 1 EN ${langLabel}]", "[élément visuel 2 EN ${langLabel}]", "[élément visuel 3 EN ${langLabel}]"],
+    "ciel": "[atmosphère ou ciel dramatique EN ${langLabel}]"
   },
   "elements_graphiques": {
     "fleches": true,
-    "couleur_fleche": "yellow | green | red | white",
-    "documents_props": ["[relevant physical prop]"],
-    "icones": ["[relevant emoji]"],
-    "overlays": ["[dramatic text overlay in ${language} — max 2 words]"]
+    "couleur_fleche": "[jaune | vert | rouge | blanc — EN ${langLabel}]",
+    "documents_props": ["[accessoire physique pertinent EN ${langLabel}]"],
+    "icones": ["[emoji pertinent]"],
+    "overlays": ["[texte overlay dramatique EN ${langLabel} — max 2 mots]"]
   },
   "composition": {
-    "profondeur": "main subject in sharp foreground, dramatic blurred background",
-    "contraste": "very high contrast, maximum color saturation",
-    "ratio": "16:9 YouTube standard (1280x720)",
-    "style_global": "hyperrealistic 3D or cinematic photo, dramatic orange/red rim lighting, studio quality"
+    "profondeur": "[description de la profondeur de champ EN ${langLabel}]",
+    "contraste": "[description du contraste EN ${langLabel}]",
+    "ratio": "16:9 YouTube (1280x720)",
+    "style_global": "[style visuel global EN ${langLabel}]"
   },
   "prompt_image_final": "[150-200 word image generation prompt IN ENGLISH ONLY for Midjourney/DALL-E/Flux. Describe: main subject with exact expression and pose, background atmosphere with specific colors and elements, lighting setup, composition, emotional impact, visual style. Self-contained. No text or letters in the generated image.]"
 }`;
@@ -92,7 +100,7 @@ Return ONLY this JSON (no markdown, no code block, no explanation):
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
-      system: 'You are a world-class YouTube thumbnail art director and viral content strategist. You analyze video scripts deeply and generate ultra-precise JSON prompts for creating viral thumbnails. You always return ONLY valid JSON — no text before or after, no markdown code blocks.',
+      system: `You are a world-class YouTube thumbnail art director and viral content strategist. You analyze video scripts deeply and generate ultra-precise JSON prompts for creating viral thumbnails. You always return ONLY valid JSON — no text before or after, no markdown code blocks. CRITICAL: All text fields in the JSON must be written in ${language}, except "prompt_image_final" which must always be in English.`,
       messages: [{ role: 'user', content: prompt }],
     });
 
