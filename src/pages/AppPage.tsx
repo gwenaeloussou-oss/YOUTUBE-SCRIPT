@@ -335,7 +335,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
       <header className="border-b border-white/10 py-5 px-4 md:px-12 backdrop-blur-md sticky top-0 z-50 bg-[#0f0f0f]/80">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-[#FF0000] p-1.5 rounded-lg"><Youtube className="w-5 h-5 text-white" /></div>
+            <img src="https://images.chariowcdn.com/cdn-cgi/image/format=auto,onerror=redirect,quality=medium-high,slow-connection-quality=50/https://assets.chariowcdn.com/assets/store_udv1gsypk62r/OAcPlra4gZkj4g0IwsDyTNxGlId1hIxTP7K8FHMl.jpg" alt="logo" className="w-12 h-12 rounded-lg object-cover" />
             <h1 className="text-xl font-bold tracking-tighter">YouScript <span className="text-[#FF0000]">Booster</span></h1>
           </div>
           <div className="flex items-center gap-2">

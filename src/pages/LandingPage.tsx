@@ -59,9 +59,7 @@ export default function LandingPage({ onStart }: Props) {
       <header className="border-b border-white/10 py-5 px-6 md:px-12 sticky top-0 z-50 bg-[#0f0f0f]/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-[#FF0000] p-2 rounded-lg">
-              <Youtube className="w-5 h-5 text-white" />
-            </div>
+            <img src="https://images.chariowcdn.com/cdn-cgi/image/format=auto,onerror=redirect,quality=medium-high,slow-connection-quality=50/https://assets.chariowcdn.com/assets/store_udv1gsypk62r/OAcPlra4gZkj4g0IwsDyTNxGlId1hIxTP7K8FHMl.jpg" alt="logo" className="w-12 h-12 rounded-lg object-cover" />
             <span className="text-xl font-bold tracking-tighter">
               YouScript <span className="text-[#FF0000]">Booster</span>
             </span>
@@ -89,7 +87,7 @@ export default function LandingPage({ onStart }: Props) {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#FF0000]/10 border border-[#FF0000]/20 rounded-full text-xs font-bold uppercase tracking-widest text-[#FF0000]">
             <Zap className="w-3 h-3" /> PROPULSÉ PAR EMPIRE SCALING
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tighter">
+          <h1 className="text-2xl md:text-7xl font-extrabold leading-tight tracking-tighter">
             Créez des scripts YouTube<br />
             <span className="text-[#FF0000] italic font-serif">viraux</span>, en quelques secondes.
           </h1>
@@ -297,9 +295,7 @@ export default function LandingPage({ onStart }: Props) {
       {/* Footer */}
       <footer className="border-t border-white/5 py-10 px-6 text-center space-y-2">
         <div className="flex items-center justify-center gap-2 mb-3">
-          <div className="bg-[#FF0000] p-1.5 rounded-lg">
-            <Youtube className="w-4 h-4 text-white" />
-          </div>
+          <img src="https://images.chariowcdn.com/cdn-cgi/image/format=auto,onerror=redirect,quality=medium-high,slow-connection-quality=50/https://assets.chariowcdn.com/assets/store_udv1gsypk62r/OAcPlra4gZkj4g0IwsDyTNxGlId1hIxTP7K8FHMl.jpg" alt="logo" className="w-10 h-10 rounded-md object-cover" />
           <span className="font-bold tracking-tighter">YouScript <span className="text-[#FF0000]">Booster</span></span>
         </div>
         <p className="text-white/20 text-xs tracking-widest uppercase">PROPULSÉ PAR EMPIRE SCALING</p>
