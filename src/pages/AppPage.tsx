@@ -90,21 +90,30 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   // Load profile, usage and history from Supabase on mount
   useEffect(() => {
     async function loadUserData() {
-      const [profileData, fullProfile, usageCount, historyItems] = await Promise.all([
-        db.getProfile(user.id),
-        db.getFullProfile(user.id),
-        db.getMonthlyUsage(user.id),
-        db.getHistory(user.id),
+      // Run critical data first — plan + usage + history are independent
+      const [profileData, usageCount, historyItems] = await Promise.all([
+        db.getProfile(user.id).catch(() => ({ plan: 'free' as const, planExpiresAt: null })),
+        db.getMonthlyUsage(user.id).catch(() => 0),
+        db.getHistory(user.id).catch(() => [] as HistoryItem[]),
       ]);
       setPlan(profileData.plan);
       setPlanExpiresAt(profileData.planExpiresAt ? new Date(profileData.planExpiresAt) : null);
       if (profileData.plan === 'free') setLanguage('Français');
       setMonthlyUsage(usageCount);
       setHistory(historyItems);
-      setProfileName(fullProfile.name || user.name);
-      setProfilePhone(fullProfile.phone || '');
-      setProfileEmail(fullProfile.email || user.email);
-      setProfileAvatar(fullProfile.avatar_url || '');
+
+      // Load extended profile separately — don't let it block history
+      db.getFullProfile(user.id)
+        .then(fullProfile => {
+          setProfileName(fullProfile.name || user.name);
+          setProfilePhone(fullProfile.phone || '');
+          setProfileEmail(fullProfile.email || user.email);
+          setProfileAvatar(fullProfile.avatar_url || '');
+        })
+        .catch(() => {
+          setProfileName(user.name);
+          setProfileEmail(user.email);
+        });
     }
     loadUserData();
   }, [user.id]);

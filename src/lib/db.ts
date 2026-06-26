@@ -49,12 +49,13 @@ export async function incrementUsage(userId: string): Promise<number> {
 }
 
 export async function getHistory(userId: string): Promise<HistoryItem[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('history')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(30);
+  if (error) console.error('[db.getHistory]', error.code, error.message);
   return (data ?? []).map(row => ({
     id: row.id,
     date: row.created_at,
@@ -75,7 +76,7 @@ export async function addHistory(userId: string, item: {
   titre: string;
   result: object;
 }): Promise<HistoryItem | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('history')
     .insert({
       user_id: userId,
@@ -88,6 +89,7 @@ export async function addHistory(userId: string, item: {
     })
     .select()
     .single();
+  if (error) console.error('[db.addHistory]', error.code, error.message);
   if (!data) return null;
   return {
     id: data.id,
