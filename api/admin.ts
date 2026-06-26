@@ -9,59 +9,17 @@ const supabaseAdmin = createClient(
 );
 
 async function verifyAdmin(req: VercelRequest): Promise<boolean> {
-  const bodyToken = typeof req.body?._token === 'string' ? req.body._token : '';
-  const auth = req.headers.authorization;
-  const headerToken = auth?.startsWith('Bearer ') ? auth.slice(7) : '';
-  const token = bodyToken || headerToken;
-  if (!token) { console.error('[admin] no token'); return false; }
-
-  // Call Supabase auth API directly — avoids service-role client overriding the JWT header
-  const resp = await fetch(`${process.env.VITE_SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'apikey': process.env.VITE_SUPABASE_ANON_KEY!,
-    },
-  });
-  if (!resp.ok) { console.error('[admin] auth api status:', resp.status); return false; }
-  const user = await resp.json() as { email?: string };
-  console.error('[admin] verified email:', user?.email);
-  return user?.email === ADMIN_EMAIL;
+  const userId = typeof req.body?._userId === 'string' ? req.body._userId : '';
+  if (!userId) return false;
+  // Service role can look up any user by ID — no JWT needed
+  const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+  if (error || !user) return false;
+  return user.email === ADMIN_EMAIL;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée.' });
-  }
-
-  // Temporary debug endpoint — no auth required
-  if (req.body?.action === '_debug') {
-    const token = typeof req.body._token === 'string' ? req.body._token : '';
-    const supabaseUrl = process.env.VITE_SUPABASE_URL ?? 'MISSING';
-    const hasAnon = !!process.env.VITE_SUPABASE_ANON_KEY;
-    let authStatus = 0;
-    let authEmail: string | null = null;
-    let authError: string | null = null;
-    if (token) {
-      try {
-        const r = await fetch(`${supabaseUrl}/auth/v1/user`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'apikey': process.env.VITE_SUPABASE_ANON_KEY! },
-        });
-        authStatus = r.status;
-        const body = await r.json() as { email?: string; message?: string };
-        authEmail = body.email ?? null;
-        authError = body.message ?? null;
-      } catch (e) { authError = String(e); }
-    }
-    return res.status(200).json({
-      supabaseUrlPrefix: supabaseUrl.slice(0, 35),
-      hasAnon,
-      tokenLength: token.length,
-      authStatus,
-      authEmail,
-      authError,
-      ADMIN_EMAIL,
-      emailMatch: authEmail === ADMIN_EMAIL,
-    });
   }
 
   try {

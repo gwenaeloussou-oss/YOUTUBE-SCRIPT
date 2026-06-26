@@ -28,17 +28,13 @@ type Stats = {
 
 type Props = { user: LoggedUser; onBack: () => void };
 
-async function getAdminToken(): Promise<string> {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? '';
-}
-
 async function adminPost(body: Record<string, unknown>) {
-  const _token = await getAdminToken();
+  const { data: { session } } = await supabase.auth.getSession();
+  const _userId = session?.user?.id ?? '';
   return fetch('/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...body, _token }),
+    body: JSON.stringify({ ...body, _userId }),
   });
 }
 
@@ -69,17 +65,12 @@ export default function AdminPage({ onBack }: Props) {
     setLoading(true);
     setError(null);
     try {
-      // Debug: call _debug first to see what the server receives
-      const dbg = await adminPost({ action: '_debug' });
-      const dbgData = await dbg.json().catch(() => ({}));
-      console.log('[admin debug]', dbgData);
-
       const res = await adminPost({ action: 'users' });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         let detail = text;
         try { detail = JSON.parse(text).error ?? text; } catch { /* */ }
-        setError(`Erreur ${res.status}: ${detail.slice(0, 300) || 'Sans détail'} | debug: ${JSON.stringify(dbgData)}`);
+        setError(`Erreur ${res.status}: ${detail.slice(0, 300) || 'Accès refusé ou erreur serveur.'}`);
         return;
       }
       const data = await res.json();

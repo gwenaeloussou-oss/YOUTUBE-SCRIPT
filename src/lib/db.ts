@@ -119,8 +119,9 @@ export async function updateProfile(userId: string, fields: { name?: string; pho
   if (Object.keys(updates).length > 0) {
     await supabase.from('profiles').update(updates).eq('id', userId);
   }
+  // Only store name in Auth metadata — never avatar (base64 would bloat the JWT to 600KB+)
   if (fields.name !== undefined) {
-    await supabase.auth.updateUser({ data: { name: fields.name, avatar_url: fields.avatar_url } });
+    await supabase.auth.updateUser({ data: { name: fields.name } });
   }
 }
 
