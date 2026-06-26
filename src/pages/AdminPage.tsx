@@ -69,7 +69,12 @@ export default function AdminPage({ onBack }: Props) {
     setError(null);
     try {
       const res = await adminFetch('/api/admin?action=users');
-      if (!res.ok) { setError('Accès refusé ou erreur serveur.'); return; }
+      if (!res.ok) {
+        let detail = '';
+        try { detail = (await res.json()).error ?? ''; } catch { detail = await res.text().catch(() => ''); }
+        setError(`Erreur ${res.status}: ${detail || 'Accès refusé ou erreur serveur.'}`);
+        return;
+      }
       const data = await res.json();
       setUsers(data.users);
       setStats(data.stats);
