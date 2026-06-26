@@ -9,18 +9,23 @@ const supabaseAdmin = createClient(
 );
 
 async function verifyAdmin(req: VercelRequest): Promise<boolean> {
-  // Accept token from Authorization header OR body (_token), to avoid header size limits
+  const bodyToken = typeof req.body?._token === 'string' ? req.body._token : '';
   const auth = req.headers.authorization;
   const headerToken = auth?.startsWith('Bearer ') ? auth.slice(7) : '';
-  const bodyToken = typeof req.body?._token === 'string' ? req.body._token : '';
-  const token = headerToken || bodyToken;
-  if (!token) return false;
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !user) {
-    console.error('[admin] verifyAdmin:', error?.message);
-    return false;
-  }
-  return user.email === ADMIN_EMAIL;
+  const token = bodyToken || headerToken;
+  if (!token) { console.error('[admin] no token'); return false; }
+
+  // Call Supabase auth API directly — avoids service-role client overriding the JWT header
+  const resp = await fetch(`${process.env.VITE_SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'apikey': process.env.VITE_SUPABASE_ANON_KEY!,
+    },
+  });
+  if (!resp.ok) { console.error('[admin] auth api status:', resp.status); return false; }
+  const user = await resp.json() as { email?: string };
+  console.error('[admin] verified email:', user?.email);
+  return user?.email === ADMIN_EMAIL;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
