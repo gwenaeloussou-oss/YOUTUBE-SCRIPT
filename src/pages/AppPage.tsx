@@ -47,6 +47,11 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [showPromoInput, setShowPromoInput] = useState(false);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileName, setProfileName] = useState(user.name);
   const [profilePhone, setProfilePhone] = useState('');
@@ -300,6 +305,34 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const openUpgradeModal = () => {
     setShowUpgradeModal(true);
     setCheckoutError(null);
+    setPromoCode('');
+    setShowPromoInput(false);
+    setPromoError(null);
+    setPromoSuccess(null);
+  };
+
+  const handlePromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    setPromoSuccess(null);
+    try {
+      const res = await fetch('/api/promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode.trim(), userId: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setPromoError(data.error || 'Code invalide.'); return; }
+      setPromoSuccess(data.message);
+      setPlan('standard');
+      setPlanExpiresAt(new Date(data.expires_at));
+      setTimeout(() => setShowUpgradeModal(false), 2000);
+    } catch {
+      setPromoError('Erreur réseau. Réessayez.');
+    } finally {
+      setPromoLoading(false);
+    }
   };
 
   const handleCheckout = async () => {
@@ -371,17 +404,59 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 </div>
               </div>
 
+              {/* Promo code */}
+              {promoSuccess ? (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium">
+                  <Check className="w-4 h-4 flex-shrink-0" /> {promoSuccess}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => { setShowPromoInput(v => !v); setPromoError(null); }}
+                    className="text-white/40 hover:text-white/70 text-xs underline underline-offset-2 transition-colors"
+                  >
+                    {showPromoInput ? 'Annuler' : 'J\'ai un code promo'}
+                  </button>
+                  {showPromoInput && (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoCode}
+                        onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                        onKeyDown={e => e.key === 'Enter' && handlePromo()}
+                        placeholder="CODE PROMO"
+                        className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-white/30 uppercase"
+                      />
+                      <button
+                        onClick={handlePromo}
+                        disabled={promoLoading || !promoCode.trim()}
+                        className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 flex items-center gap-1.5"
+                      >
+                        {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Valider'}
+                      </button>
+                    </div>
+                  )}
+                  {promoError && (
+                    <p className="flex items-center gap-1.5 text-red-400 text-xs">
+                      <AlertCircle className="w-3 h-3" /> {promoError}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {checkoutError && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{checkoutError}
                 </div>
               )}
 
-              <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-full font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-white shadow-lg shadow-green-500/20">
-                {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-                {checkoutLoading ? 'Redirection...' : isStandard ? 'Renouveler — 10 000 FCFA/mois' : 'Commencer — 10 000 FCFA/mois'}
-                {!checkoutLoading && <ArrowRight className="w-5 h-5" />}
-              </button>
+              {!promoSuccess && (
+                <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#e60000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-full font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-white shadow-lg shadow-red-500/20">
+                  {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                  {checkoutLoading ? 'Redirection...' : isStandard ? 'Renouveler — 10 000 FCFA/mois' : 'Commencer — 10 000 FCFA/mois'}
+                  {!checkoutLoading && <ArrowRight className="w-5 h-5" />}
+                </button>
+              )}
               {isStandard && planExpiresAt && (
                 <p className="text-center text-white/30 text-xs">
                   {inGrace
