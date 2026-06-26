@@ -33,6 +33,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Méthode non autorisée.' });
   }
 
+  // Temporary debug endpoint — no auth required
+  if (req.body?.action === '_debug') {
+    const token = typeof req.body._token === 'string' ? req.body._token : '';
+    const supabaseUrl = process.env.VITE_SUPABASE_URL ?? 'MISSING';
+    const hasAnon = !!process.env.VITE_SUPABASE_ANON_KEY;
+    let authStatus = 0;
+    let authEmail: string | null = null;
+    let authError: string | null = null;
+    if (token) {
+      try {
+        const r = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'apikey': process.env.VITE_SUPABASE_ANON_KEY! },
+        });
+        authStatus = r.status;
+        const body = await r.json() as { email?: string; message?: string };
+        authEmail = body.email ?? null;
+        authError = body.message ?? null;
+      } catch (e) { authError = String(e); }
+    }
+    return res.status(200).json({
+      supabaseUrlPrefix: supabaseUrl.slice(0, 35),
+      hasAnon,
+      tokenLength: token.length,
+      authStatus,
+      authEmail,
+      authError,
+      ADMIN_EMAIL,
+      emailMatch: authEmail === ADMIN_EMAIL,
+    });
+  }
+
   try {
     if (!(await verifyAdmin(req))) {
       return res.status(403).json({ error: 'Accès refusé.' });

@@ -69,12 +69,17 @@ export default function AdminPage({ onBack }: Props) {
     setLoading(true);
     setError(null);
     try {
+      // Debug: call _debug first to see what the server receives
+      const dbg = await adminPost({ action: '_debug' });
+      const dbgData = await dbg.json().catch(() => ({}));
+      console.log('[admin debug]', dbgData);
+
       const res = await adminPost({ action: 'users' });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         let detail = text;
         try { detail = JSON.parse(text).error ?? text; } catch { /* */ }
-        setError(`Erreur ${res.status}: ${detail.slice(0, 300) || 'Sans détail'}`);
+        setError(`Erreur ${res.status}: ${detail.slice(0, 300) || 'Sans détail'} | debug: ${JSON.stringify(dbgData)}`);
         return;
       }
       const data = await res.json();
