@@ -4,10 +4,12 @@ import {
   Youtube, Languages, Sparkles, Copy, Download, RotateCcw, Check,
   AlertCircle, Loader2, Layout, Type, FileText, LogOut, AlignLeft,
   Newspaper, History, Braces, Globe, Lock, Crown, X, Zap, Shield,
+  Pencil, Camera, ArrowRight, Phone, Mail, User,
 } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
 import HistoryDrawer, { type HistoryItem } from '../components/HistoryDrawer';
 import * as db from '../lib/db';
+import { supabase } from '../lib/supabase';
 
 const FREE_LIMIT = 5;
 const STANDARD_LIMIT = 60;
@@ -45,6 +47,14 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileName, setProfileName] = useState(user.name);
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileEmail, setProfileEmail] = useState(user.email);
+  const [profileAvatar, setProfileAvatar] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -80,8 +90,9 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   // Load profile, usage and history from Supabase on mount
   useEffect(() => {
     async function loadUserData() {
-      const [profileData, usageCount, historyItems] = await Promise.all([
+      const [profileData, fullProfile, usageCount, historyItems] = await Promise.all([
         db.getProfile(user.id),
+        db.getFullProfile(user.id),
         db.getMonthlyUsage(user.id),
         db.getHistory(user.id),
       ]);
@@ -90,9 +101,43 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
       if (profileData.plan === 'free') setLanguage('Français');
       setMonthlyUsage(usageCount);
       setHistory(historyItems);
+      setProfileName(fullProfile.name || user.name);
+      setProfilePhone(fullProfile.phone || '');
+      setProfileEmail(fullProfile.email || user.email);
+      setProfileAvatar(fullProfile.avatar_url || '');
     }
     loadUserData();
   }, [user.id]);
+
+  const handleSaveProfile = async () => {
+    setProfileLoading(true);
+    setProfileError(null);
+    try {
+      await db.updateProfile(user.id, {
+        name: profileName.trim(),
+        phone: profilePhone.trim(),
+        avatar_url: profileAvatar.trim(),
+      });
+      if (profileEmail.trim() !== user.email) {
+        const { error } = await supabase.auth.updateUser({ email: profileEmail.trim() });
+        if (error) throw new Error("Erreur changement email : " + error.message);
+      }
+      setProfileSaved(true);
+      setTimeout(() => { setProfileSaved(false); setShowProfileModal(false); }, 1500);
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setProfileAvatar(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const stripMarkdownTitle = (text: string) => {
     let cleaned = text
@@ -323,9 +368,10 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 </div>
               )}
 
-              <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                {checkoutLoading ? 'Redirection vers le paiement...' : isStandard ? 'Renouveler — 10 000 FCFA/mois' : 'Passer au Standard — 10 000 FCFA/mois'}
+              <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-full font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-white shadow-lg shadow-green-500/20">
+                {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {checkoutLoading ? 'Redirection...' : isStandard ? 'Renouveler — 10 000 FCFA/mois' : 'Commencer — 10 000 FCFA/mois'}
+                {!checkoutLoading && <ArrowRight className="w-5 h-5" />}
               </button>
               {isStandard && planExpiresAt && (
                 <p className="text-center text-white/30 text-xs">
@@ -336,6 +382,69 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 </p>
               )}
               <p className="text-center text-white/20 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
+
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 space-y-5">
+
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-base">Mon profil</h2>
+                <button onClick={() => setShowProfileModal(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all"><X className="w-4 h-4" /></button>
+              </div>
+
+              {/* Avatar */}
+              <div className="flex flex-col items-center gap-3">
+                <label className="relative cursor-pointer group">
+                  {profileAvatar ? (
+                    <img src={profileAvatar} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-white/10 group-hover:border-white/30 transition-all" />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-[#FF0000]/20 border-2 border-[#FF0000]/30 flex items-center justify-center text-2xl font-bold text-[#FF0000] group-hover:border-[#FF0000]/60 transition-all">
+                      {(profileName || user.name).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                </label>
+                <p className="text-white/30 text-xs">Cliquez pour changer la photo</p>
+              </div>
+
+              {/* Fields */}
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-white/40 text-xs font-medium flex items-center gap-1.5"><User className="w-3 h-3" /> Nom complet</label>
+                  <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="Votre nom" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-white/30 transition-all placeholder-white/20" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-white/40 text-xs font-medium flex items-center gap-1.5"><Mail className="w-3 h-3" /> Email</label>
+                  <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} placeholder="votre@email.com" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-white/30 transition-all placeholder-white/20" />
+                  {profileEmail !== user.email && <p className="text-orange-400/80 text-xs pl-1">Un email de confirmation vous sera envoyé</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-white/40 text-xs font-medium flex items-center gap-1.5"><Phone className="w-3 h-3" /> Téléphone</label>
+                  <input type="tel" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} placeholder="+225 07 00 00 00 00" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-white/30 transition-all placeholder-white/20" />
+                </div>
+              </div>
+
+              {profileError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{profileError}
+                </div>
+              )}
+
+              <button onClick={handleSaveProfile} disabled={profileLoading || profileSaved} className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-white/10 disabled:text-white/20 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 transition-all text-white shadow-lg shadow-green-500/20">
+                {profileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : profileSaved ? <Check className="w-4 h-4" /> : null}
+                {profileLoading ? 'Sauvegarde...' : profileSaved ? 'Sauvegardé !' : 'Enregistrer'}
+                {!profileLoading && !profileSaved && <ArrowRight className="w-4 h-4" />}
+              </button>
 
             </motion.div>
           </motion.div>
@@ -382,10 +491,19 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
               </button>
             )}
 
-            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl">
-              <div className="w-6 h-6 rounded-full bg-[#FF0000]/20 border border-[#FF0000]/30 flex items-center justify-center text-[10px] font-bold text-[#FF0000]">{user.name.charAt(0).toUpperCase()}</div>
-              <span className="text-sm text-white/70 hidden sm:block">{user.name}</span>
-            </div>
+            <button onClick={() => setShowProfileModal(true)} className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-white/20 transition-all group">
+              <div className="relative w-6 h-6 flex-shrink-0">
+                {profileAvatar ? (
+                  <img src={profileAvatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-[#FF0000]/20 border border-[#FF0000]/30 flex items-center justify-center text-[10px] font-bold text-[#FF0000]">{(profileName || user.name).charAt(0).toUpperCase()}</div>
+                )}
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#0f0f0f] border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-1.5 h-1.5 text-white/60" />
+                </div>
+              </div>
+              <span className="text-sm text-white/70 hidden sm:block">{profileName || user.name}</span>
+            </button>
             <button onClick={onLogout} className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/20 transition-all group">
               <LogOut className="w-4 h-4 text-white/40 group-hover:text-red-400 transition-colors" />
             </button>

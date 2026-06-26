@@ -108,3 +108,29 @@ export async function deleteHistoryItem(id: string): Promise<void> {
 export async function clearHistory(userId: string): Promise<void> {
   await supabase.from('history').delete().eq('user_id', userId);
 }
+
+export async function updateProfile(userId: string, fields: { name?: string; phone?: string; avatar_url?: string }): Promise<void> {
+  const updates: Record<string, string> = {};
+  if (fields.name !== undefined) updates.name = fields.name;
+  if (fields.phone !== undefined) updates.phone = fields.phone;
+  if (fields.avatar_url !== undefined) updates.avatar_url = fields.avatar_url;
+  if (Object.keys(updates).length > 0) {
+    await supabase.from('profiles').update(updates).eq('id', userId);
+  }
+  if (fields.name !== undefined) {
+    await supabase.auth.updateUser({ data: { name: fields.name, avatar_url: fields.avatar_url } });
+  }
+}
+
+export async function getFullProfile(userId: string): Promise<{ name: string; phone: string; avatar_url: string; email: string }> {
+  const [{ data: profile }, { data: { user } }] = await Promise.all([
+    supabase.from('profiles').select('name, phone, avatar_url').eq('id', userId).single(),
+    supabase.auth.getUser(),
+  ]);
+  return {
+    name: profile?.name ?? '',
+    phone: profile?.phone ?? '',
+    avatar_url: profile?.avatar_url ?? '',
+    email: user?.email ?? '',
+  };
+}
