@@ -28,16 +28,17 @@ type Stats = {
 
 type Props = { user: LoggedUser; onBack: () => void };
 
-async function adminFetch(path: string, options?: RequestInit) {
+async function getAdminToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token ?? '';
-  return fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...(options?.headers ?? {}),
-    },
+  return session?.access_token ?? '';
+}
+
+async function adminPost(body: Record<string, unknown>) {
+  const _token = await getAdminToken();
+  return fetch('/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, _token }),
   });
 }
 
@@ -68,11 +69,12 @@ export default function AdminPage({ onBack }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await adminFetch('/api/admin?action=users');
+      const res = await adminPost({ action: 'users' });
       if (!res.ok) {
-        let detail = '';
-        try { detail = (await res.json()).error ?? ''; } catch { detail = await res.text().catch(() => ''); }
-        setError(`Erreur ${res.status}: ${detail || 'Accès refusé ou erreur serveur.'}`);
+        const text = await res.text().catch(() => '');
+        let detail = text;
+        try { detail = JSON.parse(text).error ?? text; } catch { /* */ }
+        setError(`Erreur ${res.status}: ${detail.slice(0, 300) || 'Sans détail'}`);
         return;
       }
       const data = await res.json();
@@ -89,10 +91,7 @@ export default function AdminPage({ onBack }: Props) {
 
   const setPlan = async (userId: string, plan: 'free' | 'standard') => {
     setPlanLoading(userId);
-    const res = await adminFetch('/api/admin', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'set-plan', userId, plan }),
-    });
+    const res = await adminPost({ action: 'set-plan', userId, plan });
     if (res.ok) {
       setUsers(prev => prev.map(u => u.id === userId
         ? {
@@ -117,10 +116,7 @@ export default function AdminPage({ onBack }: Props) {
   const handleResetPassword = async () => {
     if (!pwdModal || pwdValue.length < 6) return;
     setPwdLoading(true);
-    const res = await adminFetch('/api/admin', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'reset-password', userId: pwdModal.userId, password: pwdValue }),
-    });
+    const res = await adminPost({ action: 'reset-password', userId: pwdModal.userId, password: pwdValue });
     if (res.ok) { setPwdDone(true); setTimeout(() => { setPwdModal(null); setPwdValue(''); setPwdDone(false); }, 1500); showToast('Mot de passe réinitialisé'); }
     setPwdLoading(false);
   };
@@ -128,10 +124,7 @@ export default function AdminPage({ onBack }: Props) {
   const handleDelete = async () => {
     if (!deleteModal) return;
     setDeleteLoading(true);
-    const res = await adminFetch('/api/admin', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'delete-user', userId: deleteModal.userId }),
-    });
+    const res = await adminPost({ action: 'delete-user', userId: deleteModal.userId });
     if (res.ok) {
       setUsers(prev => prev.filter(u => u.id !== deleteModal.userId));
       setStats(prev => prev ? { ...prev, total: prev.total - 1 } : prev);
