@@ -52,9 +52,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('usage')
         .select('user_id, count, year, month');
 
+      const { data: paymentRows } = await supabaseAdmin
+        .from('payments')
+        .select('user_id, amount, currency, created_at, chariow_sale_id')
+        .order('created_at', { ascending: false });
+
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth();
+      const monthStart = new Date(currentYear, currentMonth, 1).toISOString();
 
       const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
       const usageMap = new Map(
@@ -67,6 +73,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         totalScriptsMap.set(u.user_id, (totalScriptsMap.get(u.user_id) ?? 0) + u.count);
       }
 
+      // Per-user payment stats
+      const paymentCountMap = new Map<string, number>();
+      const paymentTotalMap = new Map<string, number>();
+      const lastPaymentMap = new Map<string, string>();
+      for (const p of paymentRows ?? []) {
+        if (!p.user_id) continue;
+        paymentCountMap.set(p.user_id, (paymentCountMap.get(p.user_id) ?? 0) + 1);
+        paymentTotalMap.set(p.user_id, (paymentTotalMap.get(p.user_id) ?? 0) + (p.amount ?? 0));
+        if (!lastPaymentMap.has(p.user_id)) lastPaymentMap.set(p.user_id, p.created_at);
+      }
+
+      // Global payment stats
+      const allPayments = paymentRows ?? [];
+      const totalRevenue = allPayments.reduce((s, p) => s + (p.amount ?? 0), 0);
+      const revenueThisMonth = allPayments
+        .filter(p => p.created_at >= monthStart)
+        .reduce((s, p) => s + (p.amount ?? 0), 0);
+      const recentPayments = allPayments.slice(0, 20).map(p => ({
+        user_id: p.user_id,
+        amount: p.amount,
+        currency: p.currency,
+        created_at: p.created_at,
+        chariow_sale_id: p.chariow_sale_id,
+      }));
+
       const result = users.map(u => ({
         id: u.id,
         email: u.email,
@@ -77,6 +108,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         total_scripts: totalScriptsMap.get(u.id) ?? 0,
         created_at: u.created_at,
         email_confirmed: !!u.email_confirmed_at,
+        payment_count: paymentCountMap.get(u.id) ?? 0,
+        payment_total: paymentTotalMap.get(u.id) ?? 0,
+        last_payment_at: lastPaymentMap.get(u.id) ?? null,
       }));
 
       const stats = {
@@ -84,9 +118,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         standard: result.filter(u => u.plan === 'standard').length,
         free: result.filter(u => u.plan === 'free').length,
         total_scripts: result.reduce((s, u) => s + u.total_scripts, 0),
+        total_revenue: totalRevenue,
+        revenue_this_month: revenueThisMonth,
       };
 
-      return res.status(200).json({ users: result, stats });
+      return res.status(200).json({ users: result, stats, recentPayments });
     }
 
     if (action === 'set-plan' && userId && plan) {

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Crown, BarChart3, Trash2, Key, ChevronLeft,
   Loader2, Check, X, AlertCircle, RefreshCw, Shield,
-  TrendingUp, UserCheck, UserX,
+  TrendingUp, UserCheck, UserX, CreditCard, DollarSign,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { LoggedUser } from './AuthPage';
@@ -17,6 +17,17 @@ type AdminUser = {
   total_scripts: number;
   created_at: string;
   email_confirmed: boolean;
+  payment_count: number;
+  payment_total: number;
+  last_payment_at: string | null;
+};
+
+type RecentPayment = {
+  user_id: string | null;
+  amount: number | null;
+  currency: string | null;
+  created_at: string;
+  chariow_sale_id: string | null;
 };
 
 type Stats = {
@@ -24,7 +35,14 @@ type Stats = {
   standard: number;
   free: number;
   total_scripts: number;
+  total_revenue: number;
+  revenue_this_month: number;
 };
+
+function formatAmount(amount: number | null, currency = 'XOF') {
+  if (!amount) return '—';
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
+}
 
 type Props = { user: LoggedUser; onBack: () => void };
 
@@ -41,6 +59,7 @@ async function adminPost(body: Record<string, unknown>) {
 export default function AdminPage({ onBack }: Props) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -76,6 +95,7 @@ export default function AdminPage({ onBack }: Props) {
       const data = await res.json();
       setUsers(data.users);
       setStats(data.stats);
+      setRecentPayments(data.recentPayments ?? []);
     } catch {
       setError('Erreur réseau.');
     } finally {
@@ -242,7 +262,7 @@ export default function AdminPage({ onBack }: Props) {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="bg-[#111] border border-white/[0.07] rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-white/40 text-xs font-medium uppercase tracking-widest">Utilisateurs</p>
@@ -266,10 +286,24 @@ export default function AdminPage({ onBack }: Props) {
             </div>
             <div className="bg-[#111] border border-[#FF0000]/20 rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-[#FF0000]/60 text-xs font-medium uppercase tracking-widest">Scripts générés</p>
+                <p className="text-[#FF0000]/60 text-xs font-medium uppercase tracking-widest">Scripts</p>
                 <TrendingUp className="w-4 h-4 text-[#FF0000]/40" />
               </div>
               <p className="text-3xl font-bold text-[#FF0000]">{stats.total_scripts}</p>
+            </div>
+            <div className="bg-[#111] border border-green-500/20 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-green-500/60 text-xs font-medium uppercase tracking-widest">Ce mois</p>
+                <CreditCard className="w-4 h-4 text-green-500/40" />
+              </div>
+              <p className="text-2xl font-bold text-green-400">{formatAmount(stats.revenue_this_month)}</p>
+            </div>
+            <div className="bg-[#111] border border-green-500/30 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-green-400/70 text-xs font-medium uppercase tracking-widest">Total revenus</p>
+                <DollarSign className="w-4 h-4 text-green-400/40" />
+              </div>
+              <p className="text-2xl font-bold text-green-300">{formatAmount(stats.total_revenue)}</p>
             </div>
           </div>
         )}
@@ -307,7 +341,8 @@ export default function AdminPage({ onBack }: Props) {
                     <th className="text-left px-5 py-3.5 text-white/40 font-medium text-xs uppercase tracking-widest">Plan</th>
                     <th className="text-center px-5 py-3.5 text-white/40 font-medium text-xs uppercase tracking-widest">Scripts mois</th>
                     <th className="text-center px-5 py-3.5 text-white/40 font-medium text-xs uppercase tracking-widest">Total</th>
-                    <th className="text-left px-5 py-3.5 text-white/40 font-medium text-xs uppercase tracking-widest">Inscription</th>
+                    <th className="text-left px-5 py-3.5 text-white/40 font-medium text-xs uppercase tracking-widest hidden md:table-cell">Paiements</th>
+                    <th className="text-left px-5 py-3.5 text-white/40 font-medium text-xs uppercase tracking-widest hidden lg:table-cell">Inscription</th>
                     <th className="text-center px-5 py-3.5 text-white/40 font-medium text-xs uppercase tracking-widest">Actions</th>
                   </tr>
                 </thead>
@@ -357,7 +392,17 @@ export default function AdminPage({ onBack }: Props) {
                           {u.total_scripts}
                         </span>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-4 hidden md:table-cell">
+                        {u.payment_count > 0 ? (
+                          <div>
+                            <p className="text-green-400 text-xs font-semibold">{formatAmount(u.payment_total)}</p>
+                            <p className="text-white/30 text-[10px]">{u.payment_count} paiement{u.payment_count > 1 ? 's' : ''}</p>
+                          </div>
+                        ) : (
+                          <span className="text-white/20 text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 hidden lg:table-cell">
                         <p className="text-white/40 text-xs">{formatDate(u.created_at)}</p>
                       </td>
                       <td className="px-5 py-4">
@@ -404,6 +449,51 @@ export default function AdminPage({ onBack }: Props) {
             </div>
           )}
         </div>
+
+        {/* Recent payments */}
+        {recentPayments.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-green-500/50" />
+              <h2 className="font-semibold text-sm text-white/80">Paiements récents</h2>
+              <span className="text-white/30 text-xs">({recentPayments.length})</span>
+            </div>
+            <div className="overflow-x-auto rounded-2xl border border-green-500/10">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-green-500/[0.03] border-b border-green-500/10">
+                    <th className="text-left px-5 py-3 text-green-500/50 font-medium text-xs uppercase tracking-widest">Utilisateur</th>
+                    <th className="text-left px-5 py-3 text-green-500/50 font-medium text-xs uppercase tracking-widest">Montant</th>
+                    <th className="text-left px-5 py-3 text-green-500/50 font-medium text-xs uppercase tracking-widest">Date</th>
+                    <th className="text-left px-5 py-3 text-green-500/50 font-medium text-xs uppercase tracking-widest hidden md:table-cell">ID Chariow</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-green-500/[0.05]">
+                  {recentPayments.map((p, i) => {
+                    const u = users.find(u => u.id === p.user_id);
+                    return (
+                      <tr key={i} className="hover:bg-green-500/[0.02] transition-colors">
+                        <td className="px-5 py-3">
+                          <p className="text-white/80 text-xs font-medium">{u?.email ?? p.user_id?.slice(0, 8) ?? '—'}</p>
+                          {u?.name && <p className="text-white/30 text-[10px]">{u.name}</p>}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="text-green-400 font-semibold text-sm">{formatAmount(p.amount, p.currency ?? 'XOF')}</span>
+                        </td>
+                        <td className="px-5 py-3">
+                          <p className="text-white/40 text-xs">{formatDate(p.created_at)}</p>
+                        </td>
+                        <td className="px-5 py-3 hidden md:table-cell">
+                          <p className="text-white/20 text-[10px] font-mono">{p.chariow_sale_id ?? '—'}</p>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Legend */}
         <div className="flex items-center gap-6 text-xs text-white/30 pb-4 flex-wrap">

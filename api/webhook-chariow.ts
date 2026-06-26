@@ -11,13 +11,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { event, sale } = req.body as {
     event: string;
-    sale?: { custom_metadata?: { userId?: string } };
+    sale?: {
+      id?: string;
+      amount?: number;
+      currency?: string;
+      email?: string;
+      custom_metadata?: { userId?: string };
+    };
   };
 
   if (event === 'successful.sale') {
     const userId = sale?.custom_metadata?.userId;
+
     if (userId) {
-      // Fetch current expiry to extend from it if still active, otherwise from now
+      // Extend plan by 30 days
       const { data: current } = await supabaseAdmin
         .from('profiles')
         .select('plan_expires_at')
@@ -27,12 +34,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const now = new Date();
       const currentExpiry = current?.plan_expires_at ? new Date(current.plan_expires_at) : now;
       const baseDate = currentExpiry > now ? currentExpiry : now;
-      const newExpiry = new Date(baseDate.getTime() + 30 * 86_400_000); // +30 days
+      const newExpiry = new Date(baseDate.getTime() + 30 * 86_400_000);
 
       await supabaseAdmin
         .from('profiles')
         .update({ plan: 'standard', plan_expires_at: newExpiry.toISOString() })
         .eq('id', userId);
+
+      // Log payment
+      await supabaseAdmin.from('payments').insert({
+        user_id: userId,
+        chariow_sale_id: sale?.id ?? null,
+        amount: sale?.amount ?? null,
+        currency: sale?.currency ?? 'XOF',
+        email: sale?.email ?? null,
+      });
     }
   }
 
