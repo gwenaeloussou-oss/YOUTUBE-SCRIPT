@@ -14,12 +14,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const graceEnd = new Date(Date.now() - 5 * 86_400_000); // now - 5 days
 
-  const { data, error } = await supabaseAdmin
+  // Get admin user ID to exclude from downgrade
+  const { data: adminUser } = await supabaseAdmin.auth.admin.getUserByEmail('gwenaeloussou@gmail.com');
+  const adminId = adminUser?.user?.id;
+
+  let query = supabaseAdmin
     .from('profiles')
     .update({ plan: 'free', plan_expires_at: null })
     .eq('plan', 'standard')
-    .lt('plan_expires_at', graceEnd.toISOString())
-    .select('id');
+    .lt('plan_expires_at', graceEnd.toISOString());
+
+  if (adminId) query = query.neq('id', adminId);
+
+  const { data, error } = await query.select('id');
 
   if (error) {
     console.error('cron-downgrade error:', error);
