@@ -33,6 +33,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: error.message });
   }
 
-  console.log(`Downgraded ${data?.length ?? 0} users past grace period`);
-  return res.status(200).json({ downgraded: data?.length ?? 0 });
+  const downgraded = data?.length ?? 0;
+  console.log(`Downgraded ${downgraded} users past grace period`);
+
+  // Delete history rows older than 30 days
+  const cutoff30 = new Date(Date.now() - 30 * 86_400_000);
+  const { error: histError, count: deletedHistory } = await supabaseAdmin
+    .from('history')
+    .delete({ count: 'exact' })
+    .lt('created_at', cutoff30.toISOString());
+
+  if (histError) console.error('cron-downgrade history cleanup error:', histError);
+  else console.log(`Deleted ${deletedHistory ?? 0} history rows older than 30 days`);
+
+  return res.status(200).json({ downgraded, history_deleted: deletedHistory ?? 0 });
 }

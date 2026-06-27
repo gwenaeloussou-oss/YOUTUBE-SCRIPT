@@ -239,33 +239,49 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
         }),
       });
 
+      // Limite atteinte côté serveur → ouvrir le modal upgrade
+      if (generateRes.status === 429) {
+        const body = await generateRes.json().catch(() => ({})) as { plan?: string };
+        setShowUpgradeModal(true);
+        // Refresh usage count from DB to sync state
+        db.getMonthlyUsage(user.id).then(u => setMonthlyUsage(u)).catch(() => {});
+        return;
+      }
+
       if (!generateRes.ok) {
         let errMsg = 'La génération a pris trop de temps. Réessayez avec moins de mots ou sans recherche web.';
         try { errMsg = (await generateRes.json()).error || errMsg; } catch { /* réponse non-JSON (timeout Vercel) */ }
         throw new Error(errMsg);
       }
 
-      let json: ScriptResult;
-      try { json = await generateRes.json() as ScriptResult; }
+      let rawJson: ScriptResult & { _newUsage?: number; _historyItem?: { id: string; date: string } };
+      try { rawJson = await generateRes.json(); }
       catch { throw new Error('Réponse invalide du serveur. Réessayez.'); }
-      const data = cleanScriptResult(json);
+
+      // Read server-authoritative usage count and history item
+      const { _newUsage, _historyItem, ...scriptJson } = rawJson;
+      if (_newUsage !== undefined) {
+        setMonthlyUsage(_newUsage);
+      }
+
+      const data = cleanScriptResult(scriptJson as ScriptResult);
       setResult(data);
       setThumbPrompt({ loading: false, json: null, error: null });
 
-      // Increment usage in Supabase
-      const newUsage = await db.incrementUsage(user.id);
-      setMonthlyUsage(newUsage);
-
-      // Save to history in Supabase
-      const newItem = await db.addHistory(user.id, {
-        sourceType,
-        sourceUrl: sourceType === 'video' ? url : sourceType === 'article' ? articleUrl : undefined,
-        language,
-        wordCount,
-        titre: data.titre,
-        result: data,
-      });
-      if (newItem) setHistory(prev => [newItem, ...prev].slice(0, 30));
+      // History saved server-side — just prepend returned item to local state
+      if (_historyItem) {
+        const newItem = {
+          id: _historyItem.id,
+          date: _historyItem.date,
+          sourceType,
+          sourceUrl: sourceType === 'video' ? url : sourceType === 'article' ? articleUrl : undefined,
+          language,
+          wordCount,
+          titre: data.titre,
+          result: data,
+        };
+        setHistory(prev => [newItem, ...prev].slice(0, 30));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {

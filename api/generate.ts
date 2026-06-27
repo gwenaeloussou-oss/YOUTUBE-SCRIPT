@@ -1,19 +1,33 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
-import { getUserPlan, braveWebSearch, buildSearchQuery, LANGUAGE_INSTRUCTIONS } from '../lib/server.js';
+import { getUserPlan, getMonthlyUsageServer, incrementMonthlyUsageServer, saveHistoryServer, FREE_LIMIT, STANDARD_LIMIT, braveWebSearch, buildSearchQuery, LANGUAGE_INSTRUCTIONS } from '../lib/server.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
-  const { transcript, articleText, freeText, url, language, wordCount, options, regenerateStyle, webSearch, userId } = req.body;
+  const { transcript, articleText, freeText, url, language, wordCount, options, regenerateStyle, webSearch, userId, sourceType: clientSourceType, sourceUrl: clientSourceUrl } = req.body;
+  const serverSourceType: 'video' | 'article' | 'text' = freeText ? 'text' : articleText ? 'article' : 'video';
 
-  // ── SERVER-SIDE PLAN ENFORCEMENT ─────────────────────────────────────────
+  // ── SERVER-SIDE PLAN + USAGE ENFORCEMENT ─────────────────────────────────
   const plan = await getUserPlan(userId);
   const isStandard = plan === 'standard';
   const effectiveLanguage = isStandard ? (language ?? 'Français') : 'Français';
   const effectiveWebSearch = isStandard ? (webSearch ?? false) : false;
+
+  // Hard server-side usage limit check — cannot be bypassed by the client
+  const limit = isStandard ? STANDARD_LIMIT : FREE_LIMIT;
+  const currentUsage = await getMonthlyUsageServer(userId);
+  if (currentUsage >= limit) {
+    return res.status(429).json({
+      error: isStandard
+        ? `Limite de ${STANDARD_LIMIT} scripts/mois atteinte. Renouvelez votre abonnement.`
+        : `Limite de ${FREE_LIMIT} scripts/mois atteinte. Passez au plan Standard pour continuer.`,
+      limit_exceeded: true,
+      plan,
+    });
+  }
   // ─────────────────────────────────────────────────────────────────────────
 
   const langInstruction = LANGUAGE_INSTRUCTIONS[effectiveLanguage] ?? `Write everything in ${effectiveLanguage}.`;
@@ -77,7 +91,19 @@ Respond ONLY with valid JSON:
       if (content.type !== 'text') throw new Error('Unexpected response');
       const jsonMatch = content.text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON found');
-      res.json(JSON.parse(jsonMatch[0]));
+      const parsed = JSON.parse(jsonMatch[0]);
+      const [newUsage, historyItem] = await Promise.all([
+        incrementMonthlyUsageServer(userId),
+        saveHistoryServer(userId, {
+          sourceType: serverSourceType,
+          sourceUrl: clientSourceUrl ?? (serverSourceType === 'video' ? url : undefined),
+          language: effectiveLanguage,
+          wordCount: Number(wordCount) || 500,
+          titre: parsed.titre ?? '',
+          result: parsed,
+        }),
+      ]);
+      res.json({ ...parsed, _newUsage: newUsage, _historyItem: historyItem });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Erreur lors de la génération du script.' });
@@ -209,7 +235,19 @@ Respond ONLY with valid JSON — no text before or after:
     if (content.type !== 'text') throw new Error('Unexpected response');
     const jsonMatch = content.text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON found');
-    res.json(JSON.parse(jsonMatch[0]));
+    const parsed = JSON.parse(jsonMatch[0]);
+    const [newUsage, historyItem] = await Promise.all([
+      incrementMonthlyUsageServer(userId),
+      saveHistoryServer(userId, {
+        sourceType: serverSourceType,
+        sourceUrl: clientSourceUrl ?? (serverSourceType === 'video' ? url : serverSourceType === 'article' ? url : undefined),
+        language: effectiveLanguage,
+        wordCount: Number(wordCount) || 500,
+        titre: parsed.titre ?? '',
+        result: parsed,
+      }),
+    ]);
+    res.json({ ...parsed, _newUsage: newUsage, _historyItem: historyItem });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur lors de la génération du script.' });

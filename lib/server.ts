@@ -9,6 +9,63 @@ function getSupabaseAdmin() {
 }
 
 const GRACE_DAYS = 5; // days after expiry before hard downgrade
+export const FREE_LIMIT = 5;
+export const STANDARD_LIMIT = 60;
+
+export async function getMonthlyUsageServer(userId: string): Promise<number> {
+  const db = getSupabaseAdmin();
+  const d = new Date();
+  const { data } = await db
+    .from('usage')
+    .select('count')
+    .eq('user_id', userId)
+    .eq('year', d.getFullYear())
+    .eq('month', d.getMonth())
+    .maybeSingle();
+  return data?.count ?? 0;
+}
+
+export async function incrementMonthlyUsageServer(userId: string): Promise<number> {
+  const db = getSupabaseAdmin();
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  const current = await getMonthlyUsageServer(userId);
+  const next = current + 1;
+  if (current === 0) {
+    await db.from('usage').insert({ user_id: userId, year, month, count: next });
+  } else {
+    await db.from('usage').update({ count: next }).eq('user_id', userId).eq('year', year).eq('month', month);
+  }
+  return next;
+}
+
+export async function saveHistoryServer(userId: string, item: {
+  sourceType: string;
+  sourceUrl?: string;
+  language: string;
+  wordCount: number;
+  titre: string;
+  result: object;
+}): Promise<{ id: string; date: string } | null> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('history')
+    .insert({
+      user_id: userId,
+      source_type: item.sourceType,
+      source_url: item.sourceUrl ?? null,
+      language: item.language,
+      word_count: item.wordCount,
+      titre: item.titre,
+      result: item.result,
+    })
+    .select('id, created_at')
+    .single();
+  if (error) console.error('[saveHistoryServer]', error.code, error.message);
+  if (!data) return null;
+  return { id: data.id, date: data.created_at };
+}
 
 export async function getUserPlan(userId?: string): Promise<'free' | 'standard'> {
   if (!userId) return 'free';
