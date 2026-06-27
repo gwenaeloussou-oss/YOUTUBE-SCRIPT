@@ -76,6 +76,35 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- 5. Table promo_uses (log des codes promo utilisés par compte)
+CREATE TABLE IF NOT EXISTS public.promo_uses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  code text NOT NULL,
+  used_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.promo_uses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Lecture promo_uses propre" ON public.promo_uses
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- 6. Table payments (log des paiements Chariow)
+CREATE TABLE IF NOT EXISTS public.payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  chariow_sale_id text,
+  amount integer,
+  currency text DEFAULT 'XOF',
+  email text,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Lecture paiements propres" ON public.payments
+  FOR SELECT USING (auth.uid() = user_id);
+
 -- ============================================================
 -- Mise à jour plan pro → standard (si tables déjà créées)
 -- ============================================================

@@ -36,17 +36,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Vous avez déjà utilisé un code promo.' });
   }
 
-  // Check if this specific code has already been used (optional: remove if codes are multi-use)
-  const { data: codeUsed } = await supabaseAdmin
-    .from('promo_uses')
-    .select('id')
-    .eq('code', normalizedCode)
-    .maybeSingle();
-
-  if (codeUsed) {
-    return res.status(400).json({ error: 'Ce code a déjà été utilisé.' });
-  }
-
   // Activate 30 days standard
   const now = new Date();
   const { data: current } = await supabaseAdmin

@@ -2,11 +2,13 @@ import { supabase } from './supabase';
 import type { HistoryItem } from '../components/HistoryDrawer';
 
 export async function getProfile(userId: string): Promise<{ plan: 'free' | 'standard'; planExpiresAt: string | null }> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('plan, plan_expires_at')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
+  if (error) console.error('[db.getProfile] error:', error.code, error.message);
+  if (!data) console.warn('[db.getProfile] no profile row for user:', userId);
   return {
     plan: (data?.plan as 'free' | 'standard') ?? 'free',
     planExpiresAt: data?.plan_expires_at ?? null,

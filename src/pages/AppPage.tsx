@@ -42,6 +42,7 @@ type Props = { user: LoggedUser; onLogout: () => void; onAdmin?: () => void };
 
 export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
+  const [planLoading, setPlanLoading] = useState(true);
   const [planExpiresAt, setPlanExpiresAt] = useState<Date | null>(null);
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -103,6 +104,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
       ]);
       setPlan(profileData.plan);
       setPlanExpiresAt(profileData.planExpiresAt ? new Date(profileData.planExpiresAt) : null);
+      setPlanLoading(false);
       if (profileData.plan === 'free') setLanguage('Français');
       setMonthlyUsage(usageCount);
       setHistory(historyItems);
@@ -518,6 +520,40 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 </div>
               </div>
 
+              {/* Plan & usage */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40 text-xs font-medium flex items-center gap-1.5"><Crown className="w-3 h-3" /> Plan actuel</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isStandard ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' : 'bg-white/10 text-white/40'}`}>
+                    {isStandard ? 'Standard' : 'Gratuit'}
+                  </span>
+                </div>
+                {isStandard && planExpiresAt && (
+                  <p className="text-xs text-white/40">
+                    Expire le <span className="text-white/70 font-semibold">{planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                    {inGrace && <span className="ml-2 text-red-400 font-semibold">(période de grâce)</span>}
+                  </p>
+                )}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/40">Scripts ce mois</span>
+                    <span className="text-xs font-bold text-white/70">{monthlyUsage} / {scriptLimit}</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${monthlyUsage >= scriptLimit ? 'bg-red-500' : 'bg-[#FF0000]'}`}
+                      style={{ width: `${Math.min(100, (monthlyUsage / scriptLimit) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-white/25">{Math.max(0, scriptLimit - monthlyUsage)} script{scriptLimit - monthlyUsage > 1 ? 's' : ''} restant{scriptLimit - monthlyUsage > 1 ? 's' : ''} ce mois</p>
+                </div>
+                {!isStandard && (
+                  <button onClick={() => { setShowProfileModal(false); openUpgradeModal(); }} className="w-full text-xs text-[#FF0000] hover:underline text-left flex items-center gap-1.5 font-semibold">
+                    <Crown className="w-3 h-3" /> Passer au Standard — 60 scripts/mois
+                  </button>
+                )}
+              </div>
+
               {profileError && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{profileError}
@@ -555,7 +591,12 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
               {history.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF0000] rounded-full text-[9px] font-bold flex items-center justify-center">{history.length > 9 ? '9+' : history.length}</span>}
             </button>
 
-            {isStandard ? (
+            {planLoading ? (
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-white/5 border border-white/10 rounded-xl">
+                <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />
+                <span className="text-xs text-white/30 hidden sm:block">...</span>
+              </div>
+            ) : isStandard ? (
               <button onClick={openUpgradeModal} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${inGrace ? 'bg-red-500/10 border-red-500/30' : showExpiryWarning ? 'bg-orange-500/10 border-orange-500/30' : 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'}`}>
                 <Crown className={`w-3.5 h-3.5 ${inGrace ? 'text-red-400' : showExpiryWarning ? 'text-orange-400' : 'text-yellow-400'}`} />
                 <span className={`text-xs font-bold ${inGrace ? 'text-red-400' : showExpiryWarning ? 'text-orange-400' : 'text-yellow-400'}`}>STANDARD</span>
@@ -564,6 +605,9 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 )}
                 {!inGrace && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
                   <span className="text-xs text-orange-400 hidden sm:block">· {daysUntilExpiry}j</span>
+                )}
+                {!inGrace && (daysUntilExpiry === null || daysUntilExpiry > 7) && planExpiresAt && (
+                  <span className="text-xs text-yellow-400/60 hidden sm:block">· {planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
                 )}
               </button>
             ) : (
@@ -785,9 +829,15 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                   <div className="flex items-center gap-2">
                     <button onClick={copyToClipboard} title="Copier tout" className="p-2 hover:bg-white/10 rounded-lg transition-all text-white/60 hover:text-white">{copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}</button>
                     <button onClick={downloadTxt} title="Télécharger .txt" className="p-2 hover:bg-white/10 rounded-lg transition-all text-white/60 hover:text-white"><Download className="w-5 h-5" /></button>
-                    <button onClick={() => generateScript(true)} title="Régénérer" className="p-2 hover:bg-white/10 rounded-lg transition-all text-white/60 hover:text-white"><RotateCcw className="w-5 h-5" /></button>
+                    <button onClick={() => generateScript(true)} title="Régénérer (même style)" className="p-2 hover:bg-white/10 rounded-lg transition-all text-white/60 hover:text-white"><RotateCcw className="w-5 h-5" /></button>
                   </div>
                 </div>
+                <button
+                  onClick={() => { setResult(null); setThumbPrompt({ loading: false, json: null, error: null }); setError(null); }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-semibold transition-all text-sm"
+                >
+                  <Sparkles className="w-4 h-4" /> Générer un nouveau script
+                </button>
 
                 <div className="space-y-2">
                   <h3 className="text-xs uppercase tracking-widest font-bold text-[#FF0000]">Titre Accrocheur</h3>
