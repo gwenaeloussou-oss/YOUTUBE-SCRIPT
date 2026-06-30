@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const { data: profiles } = await supabaseAdmin
         .from('profiles')
-        .select('id, name, plan, plan_expires_at');
+        .select('id, name, plan, plan_expires_at, phone, dial_code, country');
 
       const { data: usageRows } = await supabaseAdmin
         .from('usage')
@@ -104,6 +104,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         name: profileMap.get(u.id)?.name ?? '',
         plan: profileMap.get(u.id)?.plan ?? 'free',
         plan_expires_at: profileMap.get(u.id)?.plan_expires_at ?? null,
+        phone: profileMap.get(u.id)?.phone ?? null,
+        dial_code: profileMap.get(u.id)?.dial_code ?? null,
+        country: profileMap.get(u.id)?.country ?? null,
         usage_this_month: usageMap.get(u.id) ?? 0,
         total_scripts: totalScriptsMap.get(u.id) ?? 0,
         created_at: u.created_at,

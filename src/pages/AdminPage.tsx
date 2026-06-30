@@ -13,6 +13,9 @@ type AdminUser = {
   name: string;
   plan: 'free' | 'standard';
   plan_expires_at: string | null;
+  phone: string | null;
+  dial_code: string | null;
+  country: string | null;
   usage_this_month: number;
   total_scripts: number;
   created_at: string;
@@ -150,10 +153,15 @@ export default function AdminPage({ onBack }: Props) {
     setDeleteLoading(false);
   };
 
-  const filtered = users.filter(u =>
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
-    u.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = users.filter(u => {
+    const q = search.toLowerCase();
+    return (
+      u.email.toLowerCase().includes(q) ||
+      u.name.toLowerCase().includes(q) ||
+      (u.phone ?? '').toLowerCase().includes(q) ||
+      (u.country ?? '').toLowerCase().includes(q)
+    );
+  });
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -362,6 +370,9 @@ export default function AdminPage({ onBack }: Props) {
                                 <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/20">non vérifié</span>
                               )}
                             </div>
+                            {(u.dial_code || u.phone) && (
+                              <p className="text-white/25 text-[10px] mt-0.5">{u.dial_code ?? ''} {u.phone ?? ''}</p>
+                            )}
                           </div>
                         </div>
                       </td>

@@ -130,7 +130,10 @@ export default function AuthPage({ onBack, onAuth }: Props) {
     try {
       if (mode === 'signup') {
         if (!name.trim()) { setError('Veuillez entrer votre nom.'); return; }
-        if (!/^[\d\s\-().]{5,14}$/.test(phone)) { setError('Numéro de téléphone invalide.'); return; }
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (!/^[\d\s\-().]{5,14}$/.test(phone) || phoneDigits.length < 6) { setError('Numéro de téléphone invalide.'); return; }
+        if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setError('Adresse email invalide.'); return; }
+        if (password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
 
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
