@@ -375,13 +375,13 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const remainingScripts = Math.max(0, scriptLimit - monthlyUsage);
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-white text-gray-900 font-sans overflow-x-hidden">
 
       {/* Upgrade Modal */}
       <AnimatePresence>
         {showUpgradeModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowUpgradeModal(false)}>
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-[#111] border border-white/10 rounded-3xl p-8 space-y-6">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-white border border-gray-200 shadow-2xl rounded-3xl p-8 space-y-6">
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -390,48 +390,48 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                   </div>
                   <div>
                     <h2 className="font-bold text-lg">Passer au Standard</h2>
-                    <p className="text-white/40 text-xs">Débloquez toutes les fonctionnalités</p>
+                    <p className="text-gray-400 text-xs">Débloquez toutes les fonctionnalités</p>
                   </div>
                 </div>
-                <button onClick={() => setShowUpgradeModal(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowUpgradeModal(false)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all"><X className="w-4 h-4" /></button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/40">Gratuit</p>
-                  <p className="text-2xl font-bold">0<span className="text-sm font-normal text-white/40"> FCFA</span></p>
-                  <ul className="space-y-2 text-xs text-white/60">
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> 5 scripts / mois</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-white/30" /> Français uniquement</li>
-                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Recherche web</li>
-                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Prompt JSON miniature</li>
-                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500/60" /> Multilingue</li>
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Gratuit</p>
+                  <p className="text-2xl font-bold">0<span className="text-sm font-normal text-gray-400"> FCFA</span></p>
+                  <ul className="space-y-2 text-xs text-gray-600">
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-gray-400" /> 5 scripts / mois</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-gray-400" /> Français uniquement</li>
+                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500" /> Recherche web</li>
+                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500" /> Prompt JSON miniature</li>
+                    <li className="flex items-center gap-2"><X className="w-3 h-3 text-red-500" /> Multilingue</li>
                   </ul>
                 </div>
                 <div className="bg-gradient-to-br from-[#FF0000]/10 to-orange-500/10 border border-[#FF0000]/30 rounded-2xl p-4 space-y-3 relative">
                   <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
                   <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
-                  <p className="text-2xl font-bold">10 000<span className="text-sm font-normal text-white/40"> FCFA/mois</span></p>
-                  <ul className="space-y-2 text-xs text-white/80">
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 60 scripts / mois</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> 4 langues</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Recherche web</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Prompt JSON miniature</li>
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-400" /> Tout débloqué</li>
+                  <p className="text-2xl font-bold">10 000<span className="text-sm font-normal text-gray-400"> FCFA/mois</span></p>
+                  <ul className="space-y-2 text-xs text-gray-700">
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> 60 scripts / mois</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> 4 langues</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Recherche web</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Prompt JSON miniature</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Tout débloqué</li>
                   </ul>
                 </div>
               </div>
 
               {/* Promo code */}
               {promoSuccess ? (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
                   <Check className="w-4 h-4 flex-shrink-0" /> {promoSuccess}
                 </div>
               ) : (
                 <div className="space-y-2">
                   <button
                     onClick={() => { setShowPromoInput(v => !v); setPromoError(null); }}
-                    className="text-white/40 hover:text-white/70 text-xs underline underline-offset-2 transition-colors"
+                    className="text-gray-400 hover:text-gray-700 text-xs underline underline-offset-2 transition-colors"
                   >
                     {showPromoInput ? 'Annuler' : 'J\'ai un code promo'}
                   </button>
@@ -443,19 +443,19 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                         onChange={e => setPromoCode(e.target.value.toUpperCase())}
                         onKeyDown={e => e.key === 'Enter' && handlePromo()}
                         placeholder="CODE PROMO"
-                        className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-white/30 uppercase"
+                        className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono tracking-widest text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-300 uppercase"
                       />
                       <button
                         onClick={handlePromo}
                         disabled={promoLoading || !promoCode.trim()}
-                        className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 flex items-center gap-1.5"
+                        className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 flex items-center gap-1.5"
                       >
                         {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Valider'}
                       </button>
                     </div>
                   )}
                   {promoError && (
-                    <p className="flex items-center gap-1.5 text-red-400 text-xs">
+                    <p className="flex items-center gap-1.5 text-red-600 text-xs">
                       <AlertCircle className="w-3 h-3" /> {promoError}
                     </p>
                   )}
@@ -463,27 +463,27 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
               )}
 
               {checkoutError && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs">
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{checkoutError}
                 </div>
               )}
 
               {!promoSuccess && (
-                <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#e60000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-full font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-white shadow-lg shadow-red-500/20">
+                <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#e60000] disabled:bg-gray-100 disabled:text-gray-300 py-4 rounded-full font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-white shadow-lg shadow-red-500/20">
                   {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                   {checkoutLoading ? 'Redirection...' : isStandard ? 'Renouveler — 10 000 FCFA/mois' : 'Commencer — 10 000 FCFA/mois'}
                   {!checkoutLoading && <ArrowRight className="w-5 h-5" />}
                 </button>
               )}
               {isStandard && planExpiresAt && (
-                <p className="text-center text-white/30 text-xs">
+                <p className="text-center text-gray-400 text-xs">
                   {inGrace
                     ? `Période de grâce active — accès jusqu'au ${new Date(planExpiresAt.getTime() + 5 * 86_400_000).toLocaleDateString('fr-FR')}`
                     : `Actuel expire le ${planExpiresAt.toLocaleDateString('fr-FR')} · Renouvellement depuis cette date`
                   }
                 </p>
               )}
-              <p className="text-center text-white/20 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
+              <p className="text-center text-gray-400 text-xs">Paiement sécurisé via Monero · Accès immédiat après paiement</p>
 
             </motion.div>
           </motion.div>
@@ -494,18 +494,18 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
       <AnimatePresence>
         {showProfileModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-sm bg-[#111] border border-white/10 rounded-3xl p-6 space-y-5">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-3xl p-6 space-y-5">
 
               <div className="flex items-center justify-between">
                 <h2 className="font-bold text-base">Mon profil</h2>
-                <button onClick={() => setShowProfileModal(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all"><X className="w-4 h-4" /></button>
+                <button onClick={() => setShowProfileModal(false)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all"><X className="w-4 h-4" /></button>
               </div>
 
               {/* Avatar */}
               <div className="flex flex-col items-center gap-3">
                 <label className="relative cursor-pointer group">
                   {profileAvatar ? (
-                    <img src={profileAvatar} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-white/10 group-hover:border-white/30 transition-all" />
+                    <img src={profileAvatar} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 group-hover:border-gray-300 transition-all" />
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-[#FF0000]/20 border-2 border-[#FF0000]/30 flex items-center justify-center text-2xl font-bold text-[#FF0000] group-hover:border-[#FF0000]/60 transition-all">
                       {(profileName || user.name).charAt(0).toUpperCase()}
@@ -516,52 +516,52 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                   </div>
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                 </label>
-                <p className="text-white/30 text-xs">Cliquez pour changer la photo</p>
+                <p className="text-gray-400 text-xs">Cliquez pour changer la photo</p>
               </div>
 
               {/* Fields */}
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-white/40 text-xs font-medium flex items-center gap-1.5"><User className="w-3 h-3" /> Nom complet</label>
-                  <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="Votre nom" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-white/30 transition-all placeholder-white/20" />
+                  <label className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><User className="w-3 h-3" /> Nom complet</label>
+                  <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="Votre nom" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-300 transition-all placeholder-gray-400" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-white/40 text-xs font-medium flex items-center gap-1.5"><Mail className="w-3 h-3" /> Email</label>
-                  <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} placeholder="votre@email.com" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-white/30 transition-all placeholder-white/20" />
-                  {profileEmail !== user.email && <p className="text-orange-400/80 text-xs pl-1">Un email de confirmation vous sera envoyé</p>}
+                  <label className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><Mail className="w-3 h-3" /> Email</label>
+                  <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} placeholder="votre@email.com" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-300 transition-all placeholder-gray-400" />
+                  {profileEmail !== user.email && <p className="text-orange-600 text-xs pl-1">Un email de confirmation vous sera envoyé</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-white/40 text-xs font-medium flex items-center gap-1.5"><Phone className="w-3 h-3" /> Téléphone</label>
-                  <input type="tel" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} placeholder="+225 07 00 00 00 00" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-white/30 transition-all placeholder-white/20" />
+                  <label className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><Phone className="w-3 h-3" /> Téléphone</label>
+                  <input type="tel" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} placeholder="+225 07 00 00 00 00" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-300 transition-all placeholder-gray-400" />
                 </div>
               </div>
 
               {/* Plan & usage */}
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/40 text-xs font-medium flex items-center gap-1.5"><Crown className="w-3 h-3" /> Plan actuel</span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isStandard ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' : 'bg-white/10 text-white/40'}`}>
+                  <span className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><Crown className="w-3 h-3" /> Plan actuel</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isStandard ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'bg-gray-100 text-gray-400'}`}>
                     {isStandard ? 'Standard' : 'Gratuit'}
                   </span>
                 </div>
                 {isStandard && planExpiresAt && (
-                  <p className="text-xs text-white/40">
-                    Expire le <span className="text-white/70 font-semibold">{planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-                    {inGrace && <span className="ml-2 text-red-400 font-semibold">(période de grâce)</span>}
+                  <p className="text-xs text-gray-400">
+                    Expire le <span className="text-gray-700 font-semibold">{planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                    {inGrace && <span className="ml-2 text-red-600 font-semibold">(période de grâce)</span>}
                   </p>
                 )}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/40">Scripts ce mois</span>
-                    <span className="text-xs font-bold text-white/70">{monthlyUsage} / {scriptLimit}</span>
+                    <span className="text-xs text-gray-400">Scripts ce mois</span>
+                    <span className="text-xs font-bold text-gray-700">{monthlyUsage} / {scriptLimit}</span>
                   </div>
-                  <div className="w-full bg-white/10 rounded-full h-1.5">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div
                       className={`h-1.5 rounded-full transition-all ${monthlyUsage >= scriptLimit ? 'bg-red-500' : 'bg-[#FF0000]'}`}
                       style={{ width: `${Math.min(100, (monthlyUsage / scriptLimit) * 100)}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-white/25">{Math.max(0, scriptLimit - monthlyUsage)} script{scriptLimit - monthlyUsage > 1 ? 's' : ''} restant{scriptLimit - monthlyUsage > 1 ? 's' : ''} ce mois</p>
+                  <p className="text-[10px] text-gray-400">{Math.max(0, scriptLimit - monthlyUsage)} script{scriptLimit - monthlyUsage > 1 ? 's' : ''} restant{scriptLimit - monthlyUsage > 1 ? 's' : ''} ce mois</p>
                 </div>
                 {!isStandard && (
                   <button onClick={() => { setShowProfileModal(false); openUpgradeModal(); }} className="w-full text-xs text-[#FF0000] hover:underline text-left flex items-center gap-1.5 font-semibold">
@@ -571,12 +571,12 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
               </div>
 
               {profileError && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs">
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{profileError}
                 </div>
               )}
 
-              <button onClick={handleSaveProfile} disabled={profileLoading || profileSaved} className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-white/10 disabled:text-white/20 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 transition-all text-white shadow-lg shadow-green-500/20">
+              <button onClick={handleSaveProfile} disabled={profileLoading || profileSaved} className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-gray-100 disabled:text-gray-300 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 transition-all text-white shadow-lg shadow-green-500/20">
                 {profileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : profileSaved ? <Check className="w-4 h-4" /> : null}
                 {profileLoading ? 'Sauvegarde...' : profileSaved ? 'Sauvegardé !' : 'Enregistrer'}
                 {!profileLoading && !profileSaved && <ArrowRight className="w-4 h-4" />}
@@ -588,7 +588,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="border-b border-white/10 py-5 px-4 md:px-12 backdrop-blur-md sticky top-0 z-50 bg-[#0f0f0f]/80">
+      <header className="border-b border-gray-200 py-5 px-4 md:px-12 backdrop-blur-md sticky top-0 z-50 bg-white/90">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="https://images.chariowcdn.com/cdn-cgi/image/format=auto,onerror=redirect,quality=medium-high,slow-connection-quality=50/https://assets.chariowcdn.com/assets/store_udv1gsypk62r/OAcPlra4gZkj4g0IwsDyTNxGlId1hIxTP7K8FHMl.jpg" alt="logo" className="w-12 h-12 rounded-lg object-cover" />
@@ -596,60 +596,60 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
           </div>
           <div className="flex items-center gap-2">
             {onAdmin && (
-              <button onClick={onAdmin} className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 border border-purple-500/20 rounded-xl hover:bg-purple-500/20 transition-all text-purple-400 hover:text-purple-300">
+              <button onClick={onAdmin} className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl hover:bg-purple-100 transition-all text-purple-600 hover:text-purple-700">
                 <Shield className="w-4 h-4" />
                 <span className="text-sm hidden sm:block font-medium">Admin</span>
               </button>
             )}
-            <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/60 hover:text-white">
+            <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-600 hover:text-gray-900">
               <History className="w-4 h-4" />
               <span className="text-sm hidden sm:block">Historique</span>
-              {history.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF0000] rounded-full text-[9px] font-bold flex items-center justify-center">{history.length > 9 ? '9+' : history.length}</span>}
+              {history.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF0000] rounded-full text-[9px] font-bold flex items-center justify-center text-white">{history.length > 9 ? '9+' : history.length}</span>}
             </button>
 
             {planLoading ? (
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-white/5 border border-white/10 rounded-xl">
-                <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />
-                <span className="text-xs text-white/30 hidden sm:block">...</span>
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+                <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
+                <span className="text-xs text-gray-400 hidden sm:block">...</span>
               </div>
             ) : isStandard ? (
-              <button onClick={openUpgradeModal} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${inGrace ? 'bg-red-500/10 border-red-500/30' : showExpiryWarning ? 'bg-orange-500/10 border-orange-500/30' : 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'}`}>
-                <Crown className={`w-3.5 h-3.5 ${inGrace ? 'text-red-400' : showExpiryWarning ? 'text-orange-400' : 'text-yellow-400'}`} />
-                <span className={`text-xs font-bold ${inGrace ? 'text-red-400' : showExpiryWarning ? 'text-orange-400' : 'text-yellow-400'}`}>STANDARD</span>
+              <button onClick={openUpgradeModal} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${inGrace ? 'bg-red-50 border-red-200' : showExpiryWarning ? 'bg-orange-50 border-orange-200' : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'}`}>
+                <Crown className={`w-3.5 h-3.5 ${inGrace ? 'text-red-600' : showExpiryWarning ? 'text-orange-600' : 'text-yellow-600'}`} />
+                <span className={`text-xs font-bold ${inGrace ? 'text-red-600' : showExpiryWarning ? 'text-orange-600' : 'text-yellow-600'}`}>STANDARD</span>
                 {inGrace && graceDaysLeft !== null && (
-                  <span className="text-xs text-red-400 hidden sm:block">· grâce {graceDaysLeft}j</span>
+                  <span className="text-xs text-red-600 hidden sm:block">· grâce {graceDaysLeft}j</span>
                 )}
                 {!inGrace && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
-                  <span className="text-xs text-orange-400 hidden sm:block">· {daysUntilExpiry}j</span>
+                  <span className="text-xs text-orange-600 hidden sm:block">· {daysUntilExpiry}j</span>
                 )}
                 {!inGrace && (daysUntilExpiry === null || daysUntilExpiry > 7) && planExpiresAt && (
-                  <span className="text-xs text-yellow-400/60 hidden sm:block">· {planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                  <span className="text-xs text-yellow-600 hidden sm:block">· {planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
                 )}
               </button>
             ) : (
-              <button onClick={openUpgradeModal} className="flex items-center gap-1.5 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/50 hover:text-white text-xs font-semibold">
+              <button onClick={openUpgradeModal} className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-500 hover:text-gray-900 text-xs font-semibold">
                 <Crown className="w-3.5 h-3.5" />
                 <span className="hidden sm:block">Standard</span>
-                <span className="text-white/30 hidden sm:block">·</span>
+                <span className="text-gray-400 hidden sm:block">·</span>
                 <span className="text-[#FF0000] hidden sm:block">{remainingScripts}/{FREE_LIMIT}</span>
               </button>
             )}
 
-            <button onClick={() => setShowProfileModal(true)} className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-white/20 transition-all group">
+            <button onClick={() => setShowProfileModal(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all group">
               <div className="relative w-6 h-6 flex-shrink-0">
                 {profileAvatar ? (
                   <img src={profileAvatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-[#FF0000]/20 border border-[#FF0000]/30 flex items-center justify-center text-[10px] font-bold text-[#FF0000]">{(profileName || user.name).charAt(0).toUpperCase()}</div>
                 )}
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#0f0f0f] border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Pencil className="w-1.5 h-1.5 text-white/60" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-white border border-gray-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-1.5 h-1.5 text-gray-600" />
                 </div>
               </div>
-              <span className="text-sm text-white/70 hidden sm:block">{profileName || user.name}</span>
+              <span className="text-sm text-gray-700 hidden sm:block">{profileName || user.name}</span>
             </button>
-            <button onClick={onLogout} className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/20 transition-all group">
-              <LogOut className="w-4 h-4 text-white/40 group-hover:text-red-400 transition-colors" />
+            <button onClick={onLogout} className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-red-50 hover:border-red-200 transition-all group">
+              <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors" />
             </button>
           </div>
         </div>
@@ -657,14 +657,14 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
 
       {/* Expiry warning banner */}
       {showExpiryWarning && (
-        <div className={`px-4 py-3 flex items-center justify-between text-sm ${inGrace ? 'bg-red-500/15 border-b border-red-500/20 text-red-300' : 'bg-orange-500/10 border-b border-orange-500/20 text-orange-300'}`}>
+        <div className={`px-4 py-3 flex items-center justify-between text-sm ${inGrace ? 'bg-red-50 border-b border-red-200 text-red-700' : 'bg-orange-50 border-b border-orange-200 text-orange-700'}`}>
           <div className="flex items-center gap-2 max-w-7xl mx-auto w-full">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {inGrace
               ? <span>Abonnement expiré — période de grâce : <strong>{graceDaysLeft} jour{(graceDaysLeft ?? 0) > 1 ? 's' : ''} restant{(graceDaysLeft ?? 0) > 1 ? 's' : ''}</strong>. Renouvelez pour ne pas perdre l'accès.</span>
               : <span>Abonnement expire dans <strong>{daysUntilExpiry} jour{(daysUntilExpiry ?? 0) > 1 ? 's' : ''}</strong>.</span>
             }
-            <button onClick={handleCheckout} disabled={checkoutLoading} className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 font-semibold text-xs transition-all">
+            <button onClick={handleCheckout} disabled={checkoutLoading} className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/60 hover:bg-white/90 font-semibold text-xs transition-all">
               {checkoutLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
               Renouveler — 10 000 FCFA
             </button>
@@ -678,21 +678,21 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
         <section className="space-y-8">
           <div className="space-y-4">
             <h2 className="text-4xl font-light leading-tight">Créez votre prochain{' '}<span className="italic font-serif text-[#FF0000]">succès viral</span> en un clic.</h2>
-            <p className="text-white/60 text-lg leading-relaxed max-w-md">L'IA analyse vos sources, structure votre contenu et optimise chaque seconde pour l'engagement.</p>
+            <p className="text-gray-600 text-lg leading-relaxed max-w-md">L'IA analyse vos sources, structure votre contenu et optimise chaque seconde pour l'engagement.</p>
           </div>
 
-          <div className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-8 backdrop-blur-sm shadow-2xl">
+          <div className="bg-white p-8 rounded-3xl border border-gray-200 space-y-8 backdrop-blur-sm shadow-2xl">
 
             {/* Usage banner */}
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-gray-200">
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
                   {Array.from({ length: Math.min(scriptLimit, 10) }).map((_, i) => {
                     const threshold = isStandard ? Math.floor(monthlyUsage / scriptLimit * 10) : monthlyUsage;
-                    return <div key={i} className={`w-2 h-2 rounded-full ${i < threshold ? 'bg-[#FF0000]' : 'bg-white/20'}`} />;
+                    return <div key={i} className={`w-2 h-2 rounded-full ${i < threshold ? 'bg-[#FF0000]' : 'bg-gray-300'}`} />;
                   })}
                 </div>
-                <span className="text-xs text-white/50">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
+                <span className="text-xs text-gray-500">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
               </div>
               {!isStandard && (
                 <button onClick={openUpgradeModal} className="text-xs font-semibold text-[#FF0000] hover:underline flex items-center gap-1">
@@ -702,9 +702,9 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
             </div>
 
             {/* Source type */}
-            <div className="flex bg-[#1a1a1a] border border-white/10 rounded-2xl p-1 gap-1">
+            <div className="flex bg-gray-100 border border-gray-200 rounded-2xl p-1 gap-1">
               {(['video', 'article', 'text'] as const).map(type => (
-                <button key={type} onClick={() => setSourceType(type)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${sourceType === type ? 'bg-[#FF0000] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>
+                <button key={type} onClick={() => setSourceType(type)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${sourceType === type ? 'bg-[#FF0000] text-white shadow-lg' : 'text-gray-400 hover:text-gray-900'}`}>
                   {type === 'video' && <><Youtube className="w-4 h-4" /> Vidéo</>}
                   {type === 'article' && <><Newspaper className="w-4 h-4" /> Article</>}
                   {type === 'text' && <><AlignLeft className="w-4 h-4" /> Texte</>}
@@ -715,34 +715,34 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
             {/* Source inputs */}
             {sourceType === 'video' && (
               <div className="space-y-3">
-                <label className="text-xs uppercase tracking-widest font-semibold text-white/40 flex items-center gap-2"><Youtube className="w-3 h-3" /> URL de la vidéo source</label>
-                <input type="text" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#FF0000] transition-all hover:border-white/20 placeholder:text-white/20" />
+                <label className="text-xs uppercase tracking-widest font-semibold text-gray-400 flex items-center gap-2"><Youtube className="w-3 h-3" /> URL de la vidéo source</label>
+                <input type="text" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="w-full bg-gray-100 border border-gray-200 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#FF0000] transition-all hover:border-gray-300 placeholder:text-gray-400" />
               </div>
             )}
             {sourceType === 'article' && (
               <div className="space-y-3">
-                <label className="text-xs uppercase tracking-widest font-semibold text-white/40 flex items-center gap-2"><Newspaper className="w-3 h-3" /> Lien de l'article source</label>
-                <input type="text" value={articleUrl} onChange={e => setArticleUrl(e.target.value)} placeholder="https://example.com/mon-article..." className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#FF0000] transition-all hover:border-white/20 placeholder:text-white/20" />
-                <p className="text-xs text-white/30">Blog, presse, Medium, Substack...</p>
+                <label className="text-xs uppercase tracking-widest font-semibold text-gray-400 flex items-center gap-2"><Newspaper className="w-3 h-3" /> Lien de l'article source</label>
+                <input type="text" value={articleUrl} onChange={e => setArticleUrl(e.target.value)} placeholder="https://example.com/mon-article..." className="w-full bg-gray-100 border border-gray-200 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#FF0000] transition-all hover:border-gray-300 placeholder:text-gray-400" />
+                <p className="text-xs text-gray-400">Blog, presse, Medium, Substack...</p>
               </div>
             )}
             {sourceType === 'text' && (
               <div className="space-y-3">
-                <label className="text-xs uppercase tracking-widest font-semibold text-white/40 flex items-center gap-2"><AlignLeft className="w-3 h-3" /> Colle ton texte ici</label>
-                <textarea value={freeText} onChange={e => setFreeText(e.target.value)} rows={8} placeholder="Colle ici un script existant, une transcription, des notes..." className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#FF0000] transition-all hover:border-white/20 placeholder:text-white/20 text-sm leading-relaxed resize-none" />
-                <p className="text-xs text-white/30 flex justify-between"><span>Script, transcription, notes...</span><span className={freeText.length > 0 ? 'text-white/50' : ''}>{freeText.length} car.</span></p>
+                <label className="text-xs uppercase tracking-widest font-semibold text-gray-400 flex items-center gap-2"><AlignLeft className="w-3 h-3" /> Colle ton texte ici</label>
+                <textarea value={freeText} onChange={e => setFreeText(e.target.value)} rows={8} placeholder="Colle ici un script existant, une transcription, des notes..." className="w-full bg-gray-100 border border-gray-200 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#FF0000] transition-all hover:border-gray-300 placeholder:text-gray-400 text-sm leading-relaxed resize-none" />
+                <p className="text-xs text-gray-400 flex justify-between"><span>Script, transcription, notes...</span><span className={freeText.length > 0 ? 'text-gray-500' : ''}>{freeText.length} car.</span></p>
               </div>
             )}
 
             {/* Language */}
             <div className="space-y-3">
-              <label className="text-xs uppercase tracking-widest font-semibold text-white/40 flex items-center gap-2"><Languages className="w-3 h-3" /> Langue du script</label>
+              <label className="text-xs uppercase tracking-widest font-semibold text-gray-400 flex items-center gap-2"><Languages className="w-3 h-3" /> Langue du script</label>
               <div className="grid grid-cols-4 gap-2">
                 {LANGUAGES.map(lang => {
                   const locked = !isStandard && lang.id !== 'Français';
                   return (
-                    <button key={lang.id} onClick={() => locked ? setShowUpgradeModal(true) : setLanguage(lang.id)} className={`relative py-2 px-3 rounded-xl text-sm font-medium transition-all border ${language === lang.id && !locked ? 'bg-[#FF0000] border-[#FF0000] text-white shadow-[0_0_20px_rgba(255,0,0,0.3)]' : locked ? 'bg-white/3 border-white/5 text-white/20 cursor-pointer' : 'bg-white/5 border-white/5 hover:border-white/20 text-white/60'}`}>
-                      {locked && <Lock className="absolute top-1 right-1 w-2.5 h-2.5 text-white/20" />}
+                    <button key={lang.id} onClick={() => locked ? setShowUpgradeModal(true) : setLanguage(lang.id)} className={`relative py-2 px-3 rounded-xl text-sm font-medium transition-all border ${language === lang.id && !locked ? 'bg-[#FF0000] border-[#FF0000] text-white shadow-[0_0_20px_rgba(255,0,0,0.3)]' : locked ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-pointer' : 'bg-gray-50 border-gray-100 hover:border-gray-300 text-gray-600'}`}>
+                      {locked && <Lock className="absolute top-1 right-1 w-2.5 h-2.5 text-gray-300" />}
                       {lang.label}
                     </button>
                   );
@@ -752,21 +752,21 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
 
             {/* Word Count */}
             <div className="space-y-4">
-              <label className="text-xs uppercase tracking-widest font-semibold text-white/40 flex items-center gap-2"><AlignLeft className="w-3 h-3" /> Longueur du script</label>
+              <label className="text-xs uppercase tracking-widest font-semibold text-gray-400 flex items-center gap-2"><AlignLeft className="w-3 h-3" /> Longueur du script</label>
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-white/50">Nombre de mots</span>
+                  <span className="text-sm text-gray-500">Nombre de mots</span>
                   <div className="flex items-center gap-1 bg-[#FF0000]/10 border border-[#FF0000]/20 rounded-lg px-2 py-1">
                     <span className="text-[#FF0000]/60 text-xs">~</span>
                     <input type="number" min={50} max={9999} value={wordCount} onChange={e => { const v = Number(e.target.value); if (!isNaN(v) && v > 0) setWordCount(Math.min(v, 9999)); }} onBlur={e => { const v = Number(e.target.value); setWordCount(Math.max(50, Math.min(isNaN(v) ? 500 : v, 9999))); }} className="w-16 bg-transparent text-sm font-bold text-[#FF0000] tabular-nums text-right focus:outline-none" />
                     <span className="text-[#FF0000]/60 text-xs">mots</span>
                   </div>
                 </div>
-                <input type="range" min={50} max={9999} step={50} value={Math.min(wordCount, 9999)} onChange={e => setWordCount(Number(e.target.value))} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, #FF0000 0%, #FF0000 ${((Math.min(wordCount, 9999) - 50) / (9999 - 50)) * 100}%, rgba(255,255,255,0.1) ${((Math.min(wordCount, 9999) - 50) / (9999 - 50)) * 100}%, rgba(255,255,255,0.1) 100%)` }} />
-                <div className="flex justify-between text-[10px] text-white/20 font-medium uppercase tracking-widest"><span>50</span><span>2500</span><span>5000</span><span>9999</span></div>
+                <input type="range" min={50} max={9999} step={50} value={Math.min(wordCount, 9999)} onChange={e => setWordCount(Number(e.target.value))} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, #FF0000 0%, #FF0000 ${((Math.min(wordCount, 9999) - 50) / (9999 - 50)) * 100}%, rgba(0,0,0,0.08) ${((Math.min(wordCount, 9999) - 50) / (9999 - 50)) * 100}%, rgba(0,0,0,0.08) 100%)` }} />
+                <div className="flex justify-between text-[10px] text-gray-300 font-medium uppercase tracking-widest"><span>50</span><span>2500</span><span>5000</span><span>9999</span></div>
                 <div className="flex gap-2">
                   {[{ label: 'Short', words: 200 }, { label: 'Standard', words: 500 }, { label: 'Long', words: 1000 }, { label: 'Extra', words: 2000 }].map(p => (
-                    <button key={p.words} onClick={() => setWordCount(p.words)} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${wordCount === p.words ? 'bg-[#FF0000]/20 border-[#FF0000]/40 text-[#FF0000]' : 'bg-white/5 border-white/5 text-white/30 hover:border-white/20 hover:text-white/60'}`}>{p.label}</button>
+                    <button key={p.words} onClick={() => setWordCount(p.words)} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${wordCount === p.words ? 'bg-[#FF0000]/20 border-[#FF0000]/40 text-[#FF0000]' : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600'}`}>{p.label}</button>
                   ))}
                 </div>
               </div>
@@ -774,8 +774,8 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
 
             {/* Web search */}
             {isStandard ? (
-              <button onClick={() => setWebSearch(w => !w)} className={`w-full flex items-center gap-3 p-4 rounded-2xl border transition-all ${webSearch ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/40 hover:text-white/60 hover:border-white/20'}`}>
-                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all ${webSearch ? 'bg-blue-500' : 'border border-white/20'}`}>
+              <button onClick={() => setWebSearch(w => !w)} className={`w-full flex items-center gap-3 p-4 rounded-2xl border transition-all ${webSearch ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}>
+                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all ${webSearch ? 'bg-blue-500' : 'border border-gray-300'}`}>
                   {webSearch && <Check className="w-3 h-3 text-white" />}
                 </div>
                 <Globe className="w-4 h-4 flex-shrink-0" />
@@ -785,7 +785,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 </div>
               </button>
             ) : (
-              <button onClick={() => setShowUpgradeModal(true)} className="w-full flex items-center gap-3 p-4 rounded-2xl border border-white/5 bg-white/3 text-white/25 cursor-pointer hover:border-white/10 transition-all">
+              <button onClick={() => setShowUpgradeModal(true)} className="w-full flex items-center gap-3 p-4 rounded-2xl border border-gray-100 bg-gray-50 text-gray-300 cursor-pointer hover:border-gray-200 transition-all">
                 <Lock className="w-4 h-4 flex-shrink-0" />
                 <Globe className="w-4 h-4 flex-shrink-0" />
                 <div className="text-left">
@@ -797,14 +797,14 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
             )}
 
             {/* Submit */}
-            <button onClick={() => generateScript()} disabled={loading || (sourceType === 'video' ? !url : sourceType === 'article' ? !articleUrl : freeText.trim().length < 30)} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-white/10 disabled:text-white/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all relative overflow-hidden group active:scale-[0.98]">
+            <button onClick={() => generateScript()} disabled={loading || (sourceType === 'video' ? !url : sourceType === 'article' ? !articleUrl : freeText.trim().length < 30)} className="w-full bg-[#FF0000] hover:bg-[#D90000] disabled:bg-gray-100 disabled:text-gray-300 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all relative overflow-hidden group active:scale-[0.98] text-white">
               <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out" />
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
               {loading ? 'Analyse en cours...' : 'Analyser et générer'}
             </button>
 
             {error && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-sm">
                 <AlertCircle className="w-4 h-4" />{error}
               </motion.div>
             )}
@@ -815,21 +815,21 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
         <section className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {!result && !loading && (
-              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full bg-white/5 rounded-3xl border border-white/10 border-dashed flex flex-col items-center justify-center text-center p-12 space-y-4">
-                <div className="p-4 bg-white/5 rounded-full"><Layout className="w-12 h-12 text-white/20" /></div>
-                <p className="text-white/40 font-medium max-w-[200px]">En attente de votre premier script...</p>
+              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full bg-gray-50 rounded-3xl border border-gray-200 border-dashed flex flex-col items-center justify-center text-center p-12 space-y-4">
+                <div className="p-4 bg-gray-100 rounded-full"><Layout className="w-12 h-12 text-gray-300" /></div>
+                <p className="text-gray-400 font-medium max-w-[200px]">En attente de votre premier script...</p>
               </motion.div>
             )}
 
             {loading && (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full bg-white/5 rounded-3xl border border-white/10 flex flex-col items-center justify-center text-center p-12 space-y-6">
+              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full bg-gray-50 rounded-3xl border border-gray-200 flex flex-col items-center justify-center text-center p-12 space-y-6">
                 <div className="relative">
                   <Loader2 className="w-16 h-16 text-[#FF0000] animate-spin" />
                   <div className="absolute inset-0 blur-xl bg-[#FF0000]/20 animate-pulse" />
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-bold">{loadingStep === 'transcript' ? (sourceType === 'article' ? "Lecture de l'article..." : 'Lecture de la vidéo...') : 'Écriture du script en cours...'}</h3>
-                  <p className="text-white/40 text-sm">{loadingStep === 'transcript' ? (sourceType === 'article' ? "Extraction du contenu en cours." : 'Récupération de la transcription YouTube.') : 'Notre IA analyse le contenu et rédige un script original.'}</p>
+                  <p className="text-gray-400 text-sm">{loadingStep === 'transcript' ? (sourceType === 'article' ? "Extraction du contenu en cours." : 'Récupération de la transcription YouTube.') : 'Notre IA analyse le contenu et rédige un script original.'}</p>
                 </div>
               </motion.div>
             )}
@@ -843,14 +843,14 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                     <span className="text-[10px] font-bold uppercase tracking-tighter text-[#FF0000]">Généré avec Succès</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={copyToClipboard} title="Copier tout" className="p-2 hover:bg-white/10 rounded-lg transition-all text-white/60 hover:text-white">{copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}</button>
-                    <button onClick={downloadTxt} title="Télécharger .txt" className="p-2 hover:bg-white/10 rounded-lg transition-all text-white/60 hover:text-white"><Download className="w-5 h-5" /></button>
-                    <button onClick={() => generateScript(true)} title="Régénérer (même style)" className="p-2 hover:bg-white/10 rounded-lg transition-all text-white/60 hover:text-white"><RotateCcw className="w-5 h-5" /></button>
+                    <button onClick={copyToClipboard} title="Copier tout" className="p-2 hover:bg-gray-100 rounded-lg transition-all text-gray-600 hover:text-gray-900">{copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}</button>
+                    <button onClick={downloadTxt} title="Télécharger .txt" className="p-2 hover:bg-gray-100 rounded-lg transition-all text-gray-600 hover:text-gray-900"><Download className="w-5 h-5" /></button>
+                    <button onClick={() => generateScript(true)} title="Régénérer (même style)" className="p-2 hover:bg-gray-100 rounded-lg transition-all text-gray-600 hover:text-gray-900"><RotateCcw className="w-5 h-5" /></button>
                   </div>
                 </div>
                 <button
                   onClick={() => { setResult(null); setThumbPrompt({ loading: false, json: null, error: null }); setError(null); }}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-semibold transition-all text-sm"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 font-semibold transition-all text-sm"
                 >
                   <Sparkles className="w-4 h-4" /> Générer un nouveau script
                 </button>
@@ -862,33 +862,33 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs uppercase tracking-widest font-bold text-white/40 flex items-center gap-2"><FileText className="w-3 h-3" /> Description SEO</h3>
-                    <button onClick={() => { navigator.clipboard.writeText(result.description); setCopiedDesc(true); setTimeout(() => setCopiedDesc(false), 2000); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/50 hover:text-white transition-all text-xs font-medium">
-                      {copiedDesc ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} {copiedDesc ? 'Copié !' : 'Copier'}
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 flex items-center gap-2"><FileText className="w-3 h-3" /> Description SEO</h3>
+                    <button onClick={() => { navigator.clipboard.writeText(result.description); setCopiedDesc(true); setTimeout(() => setCopiedDesc(false), 2000); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all text-xs font-medium">
+                      {copiedDesc ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />} {copiedDesc ? 'Copié !' : 'Copier'}
                     </button>
                   </div>
-                  <textarea value={result.description} onChange={e => setResult(r => r ? { ...r, description: e.target.value } : r)} rows={Math.max(6, Math.ceil(result.description.length / 80))} className="w-full bg-white/5 rounded-2xl border border-white/10 p-4 text-sm text-white/70 leading-relaxed focus:outline-none focus:border-[#FF0000]/50 transition-all resize-y" />
+                  <textarea value={result.description} onChange={e => setResult(r => r ? { ...r, description: e.target.value } : r)} rows={Math.max(6, Math.ceil(result.description.length / 80))} className="w-full bg-gray-50 rounded-2xl border border-gray-200 p-4 text-sm text-gray-700 leading-relaxed focus:outline-none focus:border-[#FF0000]/50 transition-all resize-y" />
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-xs uppercase tracking-widest font-bold text-white/40 flex items-center gap-2"><Sparkles className="w-3 h-3" /> Le Hook (0-15s)</h3>
+                  <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 flex items-center gap-2"><Sparkles className="w-3 h-3" /> Le Hook (0-15s)</h3>
                   <div className="p-4 bg-gradient-to-r from-[#FF0000]/20 to-[#FF0000]/5 rounded-2xl border border-[#FF0000]/20 italic text-[#FF0000] font-medium leading-relaxed">"{result.hook}"</div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs uppercase tracking-widest font-bold text-white/40 flex items-center gap-2"><Type className="w-3 h-3" /> Script Complet</h3>
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 flex items-center gap-2"><Type className="w-3 h-3" /> Script Complet</h3>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-white/20 italic">Modifiable</span>
-                      <button onClick={copyScriptOnly} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/50 hover:text-white transition-all text-xs font-medium">
-                        {copiedScript ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} {copiedScript ? 'Copié !' : 'Copier le script'}
+                      <span className="text-[10px] text-gray-300 italic">Modifiable</span>
+                      <button onClick={copyScriptOnly} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all text-xs font-medium">
+                        {copiedScript ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />} {copiedScript ? 'Copié !' : 'Copier le script'}
                       </button>
-                      <button onClick={downloadTxt} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/50 hover:text-white transition-all text-xs font-medium">
+                      <button onClick={downloadTxt} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all text-xs font-medium">
                         <Download className="w-3 h-3" /> .txt
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-3 bg-white/3 border border-white/8 rounded-2xl p-4">
+                  <div className="space-y-3 bg-gray-50 border border-gray-100 rounded-2xl p-4">
                     {[result.script_complet.intro, ...result.script_complet.developpement, result.script_complet.conclusion, result.script_complet.cta].map((section, i) => {
                       const total = 2 + result.script_complet.developpement.length;
                       const isLast = i === total - 1;
@@ -901,61 +901,61 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                         const dev = [...s.developpement]; dev[i - 1] = val;
                         return { ...r, script_complet: { ...s, developpement: dev } };
                       });
-                      return <textarea key={i} value={section} onChange={e => onChange(e.target.value)} rows={Math.max(2, Math.ceil(section.length / 90))} className={`w-full text-sm leading-relaxed bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#FF0000]/50 transition-all resize-y ${isLast ? 'text-[#FF0000] font-medium' : 'text-white/80'}`} />;
+                      return <textarea key={i} value={section} onChange={e => onChange(e.target.value)} rows={Math.max(2, Math.ceil(section.length / 90))} className={`w-full text-sm leading-relaxed bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#FF0000]/50 transition-all resize-y ${isLast ? 'text-[#FF0000] font-medium' : 'text-gray-700'}`} />;
                     })}
                   </div>
                 </div>
 
                 {/* Thumbnail concept */}
-                <div className="space-y-4 pt-8 border-t border-white/10">
-                  <h3 className="text-xs uppercase tracking-widest font-bold text-white/40 flex items-center gap-2"><Sparkles className="w-3 h-3" /> Concept Miniature</h3>
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/10 space-y-3">
-                    <p className="text-xs italic text-white/60">"{result.idee_miniature.text}"</p>
+                <div className="space-y-4 pt-8 border-t border-gray-200">
+                  <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 flex items-center gap-2"><Sparkles className="w-3 h-3" /> Concept Miniature</h3>
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
+                    <p className="text-xs italic text-gray-600">"{result.idee_miniature.text}"</p>
                     <ul className="space-y-1">
                       {result.idee_miniature.elements.map((el, i) => (
-                        <li key={i} className="text-xs text-white/80 flex items-center gap-2"><div className="w-1 h-1 rounded-full bg-[#FF0000]" />{el}</li>
+                        <li key={i} className="text-xs text-gray-700 flex items-center gap-2"><div className="w-1 h-1 rounded-full bg-[#FF0000]" />{el}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
 
                 {/* Prompt JSON — Pro only */}
-                <div className="space-y-4 pt-8 border-t border-white/10">
+                <div className="space-y-4 pt-8 border-t border-gray-200">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs uppercase tracking-widest font-bold text-white/40 flex items-center gap-2"><Braces className="w-3 h-3" /> Prompt Miniature JSON</h3>
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-gray-400 flex items-center gap-2"><Braces className="w-3 h-3" /> Prompt Miniature JSON</h3>
                     {isStandard && thumbPrompt.json && (
-                      <button onClick={() => { navigator.clipboard.writeText(thumbPrompt.json!); setCopiedThumbPrompt(true); setTimeout(() => setCopiedThumbPrompt(false), 2000); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/50 hover:text-white transition-all text-xs font-medium">
-                        {copiedThumbPrompt ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />} {copiedThumbPrompt ? 'Copié !' : 'Copier le JSON'}
+                      <button onClick={() => { navigator.clipboard.writeText(thumbPrompt.json!); setCopiedThumbPrompt(true); setTimeout(() => setCopiedThumbPrompt(false), 2000); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all text-xs font-medium">
+                        {copiedThumbPrompt ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />} {copiedThumbPrompt ? 'Copié !' : 'Copier le JSON'}
                       </button>
                     )}
                   </div>
 
                   {!isStandard ? (
-                    <button onClick={() => setShowUpgradeModal(true)} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/3 text-white/30 hover:border-white/20 transition-all text-sm">
+                    <button onClick={() => setShowUpgradeModal(true)} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border border-gray-100 bg-gray-50 text-gray-300 hover:border-gray-200 transition-all text-sm">
                       <Lock className="w-4 h-4" /> Disponible en version Standard <Crown className="w-4 h-4 text-yellow-500/50" />
                     </button>
                   ) : (
                     <>
-                      <p className="text-xs text-white/30">Prompt structuré pour Midjourney, DALL·E, Flux...</p>
+                      <p className="text-xs text-gray-400">Prompt structuré pour Midjourney, DALL·E, Flux...</p>
                       {!thumbPrompt.json && !thumbPrompt.loading && (
-                        <button onClick={generateThumbPrompt} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-bold transition-all active:scale-[0.98] text-sm">
+                        <button onClick={generateThumbPrompt} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 font-bold transition-all active:scale-[0.98] text-sm">
                           <Braces className="w-4 h-4" /> Générer le prompt JSON miniature
                         </button>
                       )}
                       {thumbPrompt.loading && (
-                        <div className="flex items-center justify-center gap-3 py-8 rounded-2xl border border-white/10 bg-white/5 text-white/40 text-sm">
+                        <div className="flex items-center justify-center gap-3 py-8 rounded-2xl border border-gray-200 bg-gray-50 text-gray-400 text-sm">
                           <Loader2 className="w-4 h-4 animate-spin" /> Analyse du script en cours...
                         </div>
                       )}
                       {thumbPrompt.error && (
-                        <div className="flex items-center gap-2 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                        <div className="flex items-center gap-2 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-sm">
                           <AlertCircle className="w-4 h-4 flex-shrink-0" />{thumbPrompt.error}
                           <button onClick={generateThumbPrompt} className="ml-auto text-xs underline">Réessayer</button>
                         </div>
                       )}
                       {thumbPrompt.json && (
                         <div className="relative">
-                          <pre className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl p-4 text-xs text-green-400/80 leading-relaxed overflow-x-auto max-h-96 overflow-y-auto font-mono whitespace-pre-wrap">{thumbPrompt.json}</pre>
+                          <pre className="w-full bg-[#0a0a0a] border border-gray-800 rounded-2xl p-4 text-xs text-green-400/80 leading-relaxed overflow-x-auto max-h-96 overflow-y-auto font-mono whitespace-pre-wrap">{thumbPrompt.json}</pre>
                           <button onClick={generateThumbPrompt} className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all" title="Régénérer"><RotateCcw className="w-3 h-3" /></button>
                         </div>
                       )}
@@ -969,10 +969,10 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
         </section>
       </main>
 
-      <footer className="mt-20 border-t border-white/5 py-12 px-12 text-center space-y-4">
-        <p className="text-white/20 text-xs tracking-widest uppercase font-medium">PROPULSÉ PAR EMPIRE SCALING</p>
-        <div className="flex items-center justify-center gap-8 opacity-20 hover:opacity-40 transition-opacity">
-          <Youtube className="w-5 h-5" /><div className="w-1 h-1 bg-white rounded-full" /><Sparkles className="w-5 h-5" /><div className="w-1 h-1 bg-white rounded-full" /><Languages className="w-5 h-5" />
+      <footer className="mt-20 border-t border-gray-100 py-12 px-12 text-center space-y-4">
+        <p className="text-gray-300 text-xs tracking-widest uppercase font-medium">PROPULSÉ PAR EMPIRE SCALING</p>
+        <div className="flex items-center justify-center gap-8 opacity-30 hover:opacity-60 transition-opacity">
+          <Youtube className="w-5 h-5" /><div className="w-1 h-1 bg-gray-900 rounded-full" /><Sparkles className="w-5 h-5" /><div className="w-1 h-1 bg-gray-900 rounded-full" /><Languages className="w-5 h-5" />
         </div>
       </footer>
 
