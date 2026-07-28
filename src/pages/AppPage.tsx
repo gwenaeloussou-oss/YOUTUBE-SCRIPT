@@ -266,7 +266,10 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
 
       const data = cleanScriptResult(scriptJson as ScriptResult);
       setResult(data);
-      setThumbPrompt({ loading: false, json: null, error: null });
+      // Un script régénéré (même style) reste le même article : on garde le prompt JSON déjà généré.
+      if (!regenerateStyle) {
+        setThumbPrompt({ loading: false, json: null, error: null });
+      }
 
       // History saved server-side — just prepend returned item to local state
       if (_historyItem) {
@@ -296,6 +299,14 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
   const copyScriptOnly = () => { navigator.clipboard.writeText(getCleanScript()); setCopiedScript(true); setTimeout(() => setCopiedScript(false), 2000); };
+  const startNewScript = () => {
+    setResult(null);
+    setThumbPrompt({ loading: false, json: null, error: null });
+    setError(null);
+    setUrl('');
+    setArticleUrl('');
+    setFreeText('');
+  };
   const downloadTxt = () => {
     if (!result) return;
     const el = document.createElement('a');
@@ -849,7 +860,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                   </div>
                 </div>
                 <button
-                  onClick={() => { setResult(null); setThumbPrompt({ loading: false, json: null, error: null }); setError(null); }}
+                  onClick={startNewScript}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 font-semibold transition-all text-sm"
                 >
                   <Sparkles className="w-4 h-4" /> Générer un nouveau script
@@ -954,10 +965,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                         </div>
                       )}
                       {thumbPrompt.json && (
-                        <div className="relative">
-                          <pre className="w-full bg-[#0a0a0a] border border-gray-800 rounded-2xl p-4 text-xs text-green-400/80 leading-relaxed overflow-x-auto max-h-96 overflow-y-auto font-mono whitespace-pre-wrap">{thumbPrompt.json}</pre>
-                          <button onClick={generateThumbPrompt} className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all" title="Régénérer"><RotateCcw className="w-3 h-3" /></button>
-                        </div>
+                        <pre className="w-full bg-[#0a0a0a] border border-gray-800 rounded-2xl p-4 text-xs text-green-400/80 leading-relaxed overflow-x-auto max-h-96 overflow-y-auto font-mono whitespace-pre-wrap">{thumbPrompt.json}</pre>
                       )}
                     </>
                   )}
