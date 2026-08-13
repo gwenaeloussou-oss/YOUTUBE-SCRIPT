@@ -3,10 +3,11 @@ import {
   Users, Crown, BarChart3, Trash2, Key,
   Loader2, Check, X, AlertCircle, RefreshCw, Shield,
   TrendingUp, UserCheck, UserX, CreditCard, DollarSign,
-  BookOpen, Plus,
+  BookOpen, Plus, ChevronRight,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { LoggedUser } from './AuthPage';
+import type { Page } from '../components/Sidebar';
 
 type Ebook = {
   id: string;
@@ -65,7 +66,7 @@ function formatAmount(amount: number | null, currency = 'XOF') {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 }
 
-type Props = { user: LoggedUser };
+type Props = { user: LoggedUser; onNavigate: (page: Page) => void };
 
 async function adminPost(body: Record<string, unknown>) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -87,7 +88,7 @@ async function knowledgePost(body: Record<string, unknown>) {
   });
 }
 
-export default function AdminPage(_props: Props) {
+export default function AdminPage({ onNavigate }: Props) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
@@ -336,7 +337,13 @@ export default function AdminPage(_props: Props) {
 
       {/* Page title bar */}
       <div className="border-b border-gray-100 px-4 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto space-y-3">
+          <div className="flex items-center gap-1.5 text-xs">
+            <button onClick={() => onNavigate('home')} className="text-gray-400 hover:text-gray-900 transition-colors">Accueil</button>
+            <ChevronRight className="w-3 h-3 text-gray-300" />
+            <span className="text-gray-900 font-medium">Administration</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
@@ -350,6 +357,7 @@ export default function AdminPage(_props: Props) {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:block">Actualiser</span>
           </button>
+          </div>
         </div>
       </div>
 

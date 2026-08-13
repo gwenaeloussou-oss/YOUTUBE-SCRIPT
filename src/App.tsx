@@ -71,10 +71,10 @@ export default function App() {
   return (
     <AppShell user={user!} activePage={shellPage} isAdmin={isAdmin} onNavigate={setPage} onLogout={handleLogout}>
       {shellPage === 'home' && <HomePage user={user!} onNavigate={setPage} />}
-      {shellPage === 'app' && <AppPage user={user!} />}
-      {shellPage === 'content' && <ContentStudioPage user={user!} />}
+      {shellPage === 'app' && <AppPage user={user!} onNavigate={setPage} />}
+      {shellPage === 'content' && <ContentStudioPage user={user!} onNavigate={setPage} />}
       {shellPage === 'thumbnail' && <ThumbnailPage user={user!} onNavigate={setPage} />}
-      {shellPage === 'admin' && isAdmin && <AdminPage user={user!} />}
+      {shellPage === 'admin' && isAdmin && <AdminPage user={user!} onNavigate={setPage} />}
     </AppShell>
   );
 }

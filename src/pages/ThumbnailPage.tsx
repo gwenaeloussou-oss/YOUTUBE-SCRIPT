@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Loader2, AlertCircle, Copy, Check, Braces, Lock, Crown, Youtube } from 'lucide-react';
+import { Image as ImageIcon, Loader2, AlertCircle, Copy, Check, Braces, Lock, Crown, Youtube, ChevronRight } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
 import type { Page } from '../components/Sidebar';
 import * as db from '../lib/db';
@@ -93,6 +93,12 @@ export default function ThumbnailPage({ user, onNavigate }: Props) {
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-6">
+      <div className="flex items-center gap-1.5 text-xs">
+        <button onClick={() => onNavigate('home')} className="text-gray-400 hover:text-gray-900 transition-colors">Accueil</button>
+        <ChevronRight className="w-3 h-3 text-gray-300" />
+        <span className="text-gray-900 font-medium">Miniature</span>
+      </div>
+
       <div className="flex items-center gap-2">
         <ImageIcon className="w-5 h-5 text-[#FF0000]" />
         <div>

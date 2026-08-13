@@ -2,10 +2,11 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Pencil, Trash2, Sparkles, Loader2, AlertCircle,
-  Youtube, Facebook, Linkedin, Clapperboard, Check, Copy, ChevronDown,
-  Library, Megaphone, Lock, X, Filter, MessageCircle,
+  Youtube, Facebook, Linkedin, Clapperboard, Check, Copy, ChevronDown, ChevronRight,
+  Library, Megaphone, Lock, X, MessageCircle, Search,
 } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
+import type { Page } from '../components/Sidebar';
 import * as db from '../lib/db';
 import type { Offer } from '../lib/db';
 import type { HistoryItem, PlatformId, ContentStatus } from '../components/HistoryDrawer';
@@ -59,9 +60,9 @@ const EMPTY_OFFER_FORM = {
   differentiators: '', proof: '', commercialTerms: '', cta: '', brandTone: 'expert', language: 'Français',
 };
 
-type Props = { user: LoggedUser };
+type Props = { user: LoggedUser; onNavigate: (page: Page) => void };
 
-export default function ContentStudioPage({ user }: Props) {
+export default function ContentStudioPage({ user, onNavigate }: Props) {
   const [tab, setTab] = useState<Tab>('offers');
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
@@ -88,6 +89,7 @@ export default function ContentStudioPage({ user }: Props) {
 
   const [library, setLibrary] = useState<HistoryItem[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
+  const [librarySearch, setLibrarySearch] = useState('');
   const [filterPlatform, setFilterPlatform] = useState<PlatformId | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<ContentStatus | 'all'>('all');
   const [openLibraryItem, setOpenLibraryItem] = useState<HistoryItem | null>(null);
@@ -211,7 +213,8 @@ export default function ContentStudioPage({ user }: Props) {
 
   const filteredLibrary = library.filter(item =>
     (filterPlatform === 'all' || item.platform === filterPlatform) &&
-    (filterStatus === 'all' || item.status === filterStatus)
+    (filterStatus === 'all' || item.status === filterStatus) &&
+    (librarySearch.trim() === '' || item.titre.toLowerCase().includes(librarySearch.trim().toLowerCase()))
   );
 
   const selectedOffer = offers.find(o => o.id === selectedOfferId);
@@ -220,14 +223,21 @@ export default function ContentStudioPage({ user }: Props) {
     <div className="text-gray-900 font-sans">
       {/* Page title bar */}
       <div className="border-b border-gray-100 py-5 px-4 md:px-12">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Megaphone className="w-5 h-5 text-[#FF0000]" />
-            <h1 className="text-lg font-bold tracking-tight">Post Multiplateforme</h1>
+        <div className="max-w-6xl mx-auto space-y-2">
+          <div className="flex items-center gap-1.5 text-xs">
+            <button onClick={() => onNavigate('home')} className="text-gray-400 hover:text-gray-900 transition-colors">Accueil</button>
+            <ChevronRight className="w-3 h-3 text-gray-300" />
+            <span className="text-gray-900 font-medium">Post Multiplateforme</span>
           </div>
-          {!planLoading && (
-            <span className="text-xs text-gray-500">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
-          )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-[#FF0000]" />
+              <h1 className="text-lg font-bold tracking-tight">Post Multiplateforme</h1>
+            </div>
+            {!planLoading && (
+              <span className="text-xs text-gray-500">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -255,12 +265,17 @@ export default function ContentStudioPage({ user }: Props) {
         {/* ─────────────────────── OFFRES ─────────────────────── */}
         {tab === 'offers' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">Vos offres</h2>
-                <p className="text-gray-500 text-sm">Décrivez votre produit ou service une fois, réutilisez-le pour chaque génération.</p>
+            <div className="bg-gray-900 rounded-3xl p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Megaphone className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-white font-bold text-lg">Vos offres</h2>
+                  <p className="text-white/50 text-xs">Décrivez votre produit ou service une fois, réutilisez-le pour chaque génération.</p>
+                </div>
               </div>
-              <button onClick={openNewOfferForm} className="flex items-center gap-2 bg-[#FF0000] hover:bg-[#D90000] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95">
+              <button onClick={openNewOfferForm} className="flex items-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 flex-shrink-0">
                 <Plus className="w-4 h-4" /> Nouvelle offre
               </button>
             </div>
@@ -269,8 +284,14 @@ export default function ContentStudioPage({ user }: Props) {
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-gray-300" /></div>
             ) : offers.length === 0 ? (
               <div className="border border-dashed border-gray-200 rounded-3xl py-16 text-center space-y-3">
-                <Megaphone className="w-10 h-10 text-gray-200 mx-auto" />
-                <p className="text-gray-400 text-sm">Aucune offre pour l'instant. Créez-en une pour commencer à générer du contenu.</p>
+                <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mx-auto">
+                  <Megaphone className="w-6 h-6 text-gray-300" />
+                </div>
+                <p className="font-bold text-gray-900">Rien ici pour le moment</p>
+                <p className="text-gray-400 text-sm max-w-xs mx-auto">Créez votre première offre pour commencer à générer du contenu.</p>
+                <button onClick={openNewOfferForm} className="inline-flex items-center gap-2 bg-[#FF0000] hover:bg-[#D90000] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95">
+                  <Plus className="w-4 h-4" /> Nouvelle offre
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -434,23 +455,54 @@ export default function ContentStudioPage({ user }: Props) {
         {/* ─────────────────────── BIBLIOTHÈQUE ─────────────────────── */}
         {tab === 'library' && (
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5 text-gray-400 text-xs font-semibold uppercase tracking-widest"><Filter className="w-3.5 h-3.5" /> Filtres</div>
-              <select value={filterPlatform} onChange={e => setFilterPlatform(e.target.value as PlatformId | 'all')} className="bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none focus:border-[#FF0000]">
-                <option value="all">Toutes les plateformes</option>
-                {(Object.keys(PLATFORM_META) as PlatformId[]).map(p => <option key={p} value={p}>{PLATFORM_META[p].label}</option>)}
-              </select>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContentStatus | 'all')} className="bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none focus:border-[#FF0000]">
-                <option value="all">Tous les statuts</option>
-                {(Object.keys(STATUS_LABELS) as ContentStatus[]).map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-              </select>
+            <div className="bg-gray-900 rounded-3xl p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Library className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-white font-bold text-lg">Bibliothèque de contenus</h2>
+                  <p className="text-white/50 text-xs">Tous vos contenus générés. Recherchez, filtrez, gérez.</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
+                  <input
+                    type="text"
+                    value={librarySearch}
+                    onChange={e => setLibrarySearch(e.target.value)}
+                    placeholder="Rechercher un contenu..."
+                    className="w-full bg-white/10 border border-white/10 rounded-xl py-2 pl-8 pr-3 text-xs text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                  />
+                </div>
+                <select value={filterPlatform} onChange={e => setFilterPlatform(e.target.value as PlatformId | 'all')} className="bg-white/10 border border-white/10 rounded-xl py-2 px-3 text-xs font-medium text-white focus:outline-none focus:border-white/30">
+                  <option value="all" className="text-gray-900">Toutes les plateformes</option>
+                  {(Object.keys(PLATFORM_META) as PlatformId[]).map(p => <option key={p} value={p} className="text-gray-900">{PLATFORM_META[p].label}</option>)}
+                </select>
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContentStatus | 'all')} className="bg-white/10 border border-white/10 rounded-xl py-2 px-3 text-xs font-medium text-white focus:outline-none focus:border-white/30">
+                  <option value="all" className="text-gray-900">Tous les statuts</option>
+                  {(Object.keys(STATUS_LABELS) as ContentStatus[]).map(s => <option key={s} value={s} className="text-gray-900">{STATUS_LABELS[s]}</option>)}
+                </select>
+              </div>
             </div>
 
             {libraryLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-gray-300" /></div>
             ) : filteredLibrary.length === 0 ? (
-              <div className="border border-dashed border-gray-200 rounded-3xl py-16 text-center">
-                <p className="text-gray-400 text-sm">Aucun contenu pour ces filtres.</p>
+              <div className="border border-dashed border-gray-200 rounded-3xl py-16 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mx-auto">
+                  <Library className="w-6 h-6 text-gray-300" />
+                </div>
+                <p className="font-bold text-gray-900">Rien ici pour le moment</p>
+                <p className="text-gray-400 text-sm max-w-xs mx-auto">
+                  {library.length === 0 ? 'Générez votre premier contenu pour alimenter votre bibliothèque.' : 'Aucun contenu ne correspond à ces filtres.'}
+                </p>
+                {library.length === 0 && (
+                  <button onClick={() => setTab('generate')} className="inline-flex items-center gap-2 bg-[#FF0000] hover:bg-[#D90000] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95">
+                    <Sparkles className="w-4 h-4" /> Générer du contenu
+                  </button>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-gray-100 border border-gray-200 rounded-2xl overflow-hidden">
