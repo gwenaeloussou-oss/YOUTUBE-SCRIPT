@@ -3,9 +3,26 @@ import {
   Users, Crown, BarChart3, Trash2, Key, ChevronLeft,
   Loader2, Check, X, AlertCircle, RefreshCw, Shield,
   TrendingUp, UserCheck, UserX, CreditCard, DollarSign,
+  BookOpen, Plus,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { LoggedUser } from './AuthPage';
+
+type Ebook = {
+  id: string;
+  title: string;
+  platform_tags: string[];
+  chunk_count: number;
+  created_at: string;
+};
+
+const KNOWLEDGE_PLATFORMS: { id: string; label: string }[] = [
+  { id: 'youtube_long', label: 'YouTube (long)' },
+  { id: 'youtube_short', label: 'Short / Reels / TikTok' },
+  { id: 'facebook', label: 'Facebook' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'facebook_comment', label: 'Commentaire Facebook' },
+];
 
 type AdminUser = {
   id: string;
@@ -60,6 +77,16 @@ async function adminPost(body: Record<string, unknown>) {
   });
 }
 
+async function knowledgePost(body: Record<string, unknown>) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const _userId = session?.user?.id ?? '';
+  return fetch('/api/admin-knowledge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, _userId }),
+  });
+}
+
 export default function AdminPage({ onBack }: Props) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -78,6 +105,15 @@ export default function AdminPage({ onBack }: Props) {
 
   const [planLoading, setPlanLoading] = useState<string | null>(null);
   const [actionToast, setActionToast] = useState<string | null>(null);
+
+  const [ebooks, setEbooks] = useState<Ebook[]>([]);
+  const [ebooksLoading, setEbooksLoading] = useState(true);
+  const [newEbookTitle, setNewEbookTitle] = useState('');
+  const [newEbookTags, setNewEbookTags] = useState<string[]>([]);
+  const [newEbookContent, setNewEbookContent] = useState('');
+  const [ebookSaving, setEbookSaving] = useState(false);
+  const [ebookError, setEbookError] = useState<string | null>(null);
+  const [deleteEbookId, setDeleteEbookId] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setActionToast(msg);
@@ -107,7 +143,49 @@ export default function AdminPage({ onBack }: Props) {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadEbooks = useCallback(async () => {
+    setEbooksLoading(true);
+    try {
+      const res = await knowledgePost({ action: 'list' });
+      if (res.ok) setEbooks((await res.json()).ebooks ?? []);
+    } finally {
+      setEbooksLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); loadEbooks(); }, [load, loadEbooks]);
+
+  const toggleEbookTag = (id: string) => {
+    setNewEbookTags(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
+  };
+
+  const saveEbook = async () => {
+    if (!newEbookTitle.trim() || !newEbookContent.trim()) return;
+    setEbookSaving(true);
+    setEbookError(null);
+    try {
+      const res = await knowledgePost({ action: 'add', title: newEbookTitle.trim(), platformTags: newEbookTags, content: newEbookContent });
+      const data = await res.json();
+      if (!res.ok) { setEbookError(data.error || "Erreur lors de l'ajout."); return; }
+      setNewEbookTitle('');
+      setNewEbookTags([]);
+      setNewEbookContent('');
+      showToast(`Guide indexé — ${data.chunksIndexed} extrait${data.chunksIndexed > 1 ? 's' : ''}`);
+      await loadEbooks();
+    } catch {
+      setEbookError('Erreur réseau.');
+    } finally {
+      setEbookSaving(false);
+    }
+  };
+
+  const confirmDeleteEbook = async () => {
+    if (!deleteEbookId) return;
+    await knowledgePost({ action: 'delete', ebookId: deleteEbookId });
+    setDeleteEbookId(null);
+    await loadEbooks();
+    showToast('Guide supprimé');
+  };
 
   const setPlan = async (userId: string, plan: 'free' | 'standard') => {
     setPlanLoading(userId);
@@ -232,6 +310,25 @@ export default function AdminPage({ onBack }: Props) {
               <button onClick={handleDelete} disabled={deleteLoading} className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-white">
                 {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Supprimer'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete ebook confirm modal */}
+      {deleteEbookId && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setDeleteEbookId(null)}>
+          <div className="w-full max-w-sm bg-white border border-red-200 shadow-2xl rounded-2xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center">
+                <Trash2 className="w-4 h-4 text-red-600" />
+              </div>
+              <p className="font-semibold text-sm">Supprimer ce guide ?</p>
+            </div>
+            <p className="text-gray-500 text-sm">Tous ses extraits indexés seront retirés de la base de connaissances.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setDeleteEbookId(null)} className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm text-gray-600 hover:text-gray-900 transition-all">Annuler</button>
+              <button onClick={confirmDeleteEbook} className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-semibold transition-all text-white">Supprimer</button>
             </div>
           </div>
         </div>
@@ -506,6 +603,88 @@ export default function AdminPage({ onBack }: Props) {
             </div>
           </div>
         )}
+
+        {/* Base de connaissances (RAG) */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-gray-400" />
+            <h2 className="font-semibold text-sm text-gray-700">Base de connaissances</h2>
+            <span className="text-gray-400 text-xs">— guides consultés par l'IA pour structurer les contenus générés</span>
+          </div>
+
+          <div className="border border-gray-200 rounded-2xl p-5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={newEbookTitle}
+                onChange={e => setNewEbookTitle(e.target.value)}
+                placeholder="Titre du guide (ex : Chapitre 2 — Les commentaires)"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#FF0000] placeholder-gray-400"
+              />
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {KNOWLEDGE_PLATFORMS.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => toggleEbookTag(p.id)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${newEbookTags.includes(p.id) ? 'bg-[#FF0000]/5 border-[#FF0000]/40 text-[#FF0000]' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea
+              value={newEbookContent}
+              onChange={e => setNewEbookContent(e.target.value)}
+              placeholder="Collez ici le texte extrait du guide/ebook (PDF, Markdown...). Il sera découpé en extraits et indexé automatiquement."
+              rows={6}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#FF0000] placeholder-gray-400 resize-y"
+            />
+            {ebookError && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{ebookError}
+              </div>
+            )}
+            <button
+              onClick={saveEbook}
+              disabled={ebookSaving || !newEbookTitle.trim() || !newEbookContent.trim()}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#FF0000] hover:bg-[#D90000] disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-xl text-sm font-semibold transition-all active:scale-95"
+            >
+              {ebookSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {ebookSaving ? 'Indexation en cours...' : 'Ajouter et indexer'}
+            </button>
+          </div>
+
+          {ebooksLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-gray-300" /></div>
+          ) : ebooks.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-8">Aucun guide indexé — la génération utilise les frameworks par défaut en attendant.</p>
+          ) : (
+            <div className="divide-y divide-gray-100 border border-gray-200 rounded-2xl overflow-hidden">
+              {ebooks.map(e => (
+                <div key={e.id} className="flex items-center gap-3 px-4 py-3">
+                  <BookOpen className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{e.title}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                      {e.platform_tags.length === 0 ? (
+                        <span className="text-[10px] text-gray-400">Toutes plateformes</span>
+                      ) : e.platform_tags.map(t => (
+                        <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-50 border border-gray-200 text-gray-500">
+                          {KNOWLEDGE_PLATFORMS.find(p => p.id === t)?.label ?? t}
+                        </span>
+                      ))}
+                      <span className="text-[10px] text-gray-300">· {e.chunk_count} extrait{e.chunk_count > 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => setDeleteEbookId(e.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-all flex-shrink-0">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Legend */}
         <div className="flex items-center gap-6 text-xs text-gray-400 pb-4 flex-wrap">

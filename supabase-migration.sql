@@ -165,3 +165,50 @@ ALTER TABLE public.history ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT
 ALTER TABLE public.history DROP CONSTRAINT IF EXISTS history_status_check;
 ALTER TABLE public.history ADD CONSTRAINT history_status_check
   CHECK (status IN ('draft', 'validated', 'scheduled', 'published'));
+
+-- ============================================================
+-- Phase 2 : pipeline RAG (base de connaissances vectorisée)
+-- ============================================================
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS public.ebooks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  platform_tags text[] NOT NULL DEFAULT '{}',
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.knowledge_chunks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ebook_id uuid NOT NULL REFERENCES public.ebooks(id) ON DELETE CASCADE,
+  section text,
+  platform_tags text[] NOT NULL DEFAULT '{}',
+  content text NOT NULL,
+  embedding vector(768),
+  created_at timestamptz DEFAULT now()
+);
+
+-- HNSW plutôt qu'ivfflat : pas de perte de recall tant que le corpus est petit
+-- (ivfflat nécessite beaucoup de données pour bien clusteriser dès la création).
+CREATE INDEX IF NOT EXISTS knowledge_chunks_embedding_idx ON public.knowledge_chunks
+  USING hnsw (embedding vector_cosine_ops);
+
+ALTER TABLE public.ebooks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.knowledge_chunks ENABLE ROW LEVEL SECURITY;
+-- Pas de policy publique : uniquement accessible via la clé service_role (côté serveur).
+
+CREATE OR REPLACE FUNCTION match_knowledge_chunks(
+  query_embedding vector(768),
+  match_platform text,
+  match_count int DEFAULT 4
+)
+RETURNS TABLE (content text, section text, similarity float)
+LANGUAGE sql STABLE
+AS $$
+  SELECT knowledge_chunks.content, knowledge_chunks.section,
+         1 - (knowledge_chunks.embedding <=> query_embedding) AS similarity
+  FROM public.knowledge_chunks
+  WHERE match_platform = ANY(knowledge_chunks.platform_tags) OR knowledge_chunks.platform_tags = '{}'
+  ORDER BY knowledge_chunks.embedding <=> query_embedding
+  LIMIT match_count;
+$$;

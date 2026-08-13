@@ -1,11 +1,30 @@
 // Shared utilities for all Vercel serverless functions
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenAI } from '@google/genai';
 
 function getSupabaseAdmin() {
   return createClient(
     process.env.VITE_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
+}
+
+const EMBEDDING_MODEL = 'gemini-embedding-001';
+const EMBEDDING_DIMENSIONS = 768; // pinned to match knowledge_chunks.embedding column (model defaults to 3072 otherwise)
+let genAI: GoogleGenAI | null = null;
+function getGenAI() {
+  if (!genAI) genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+  return genAI;
+}
+
+export async function embedText(text: string): Promise<number[]> {
+  const ai = getGenAI();
+  const response = await ai.models.embedContent({
+    model: EMBEDDING_MODEL,
+    contents: [text],
+    config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+  });
+  return response.embeddings?.[0]?.values ?? [];
 }
 
 const GRACE_DAYS = 5; // days after expiry before hard downgrade
@@ -299,15 +318,102 @@ function buildOfferBlock(offer: OfferInput): string {
   return lines.join('\n');
 }
 
-export function buildPlatformSystemPrompt(platform: PlatformId, language: string): string {
+export type KnowledgeChunk = { content: string; section: string | null };
+
+// Retrieval step of the RAG pipeline (§6.2): embeds the query, finds the closest
+// chunks tagged for this platform via pgvector cosine similarity. Returns an empty
+// array (never throws) when nothing is indexed yet or the embedding call fails —
+// callers fall back to the hardcoded PLATFORM_KNOWLEDGE in that case.
+export async function retrieveKnowledge(platform: PlatformId, query: string, matchCount = 4): Promise<KnowledgeChunk[]> {
+  try {
+    const embedding = await embedText(query);
+    if (embedding.length === 0) return [];
+    const db = getSupabaseAdmin();
+    const { data, error } = await db.rpc('match_knowledge_chunks', {
+      query_embedding: embedding,
+      match_platform: platform,
+      match_count: matchCount,
+    });
+    if (error) { console.error('[retrieveKnowledge]', error.message); return []; }
+    return (data ?? []) as KnowledgeChunk[];
+  } catch (err) {
+    console.error('[retrieveKnowledge] failed:', err);
+    return [];
+  }
+}
+
+// Ingestion step (§6.2): splits raw ebook text into ~500-800 token chunks, tracking
+// the nearest short heading-like line above each chunk as its section label.
+export function chunkEbookText(text: string, maxChars = 2800): KnowledgeChunk[] {
+  const isHeading = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.length > 90) return false;
+    return !/[.!?,;:]$/.test(trimmed);
+  };
+
+  const chunks: KnowledgeChunk[] = [];
+  let currentSection: string | null = null;
+  let buffer: string[] = [];
+  let bufferChars = 0;
+
+  const flush = () => {
+    const content = buffer.join('\n').trim();
+    if (content.length > 40) chunks.push({ section: currentSection, content });
+    buffer = [];
+    bufferChars = 0;
+  };
+
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (isHeading(line) && (buffer.length === 0 || bufferChars > 200)) {
+      flush();
+      currentSection = line;
+      continue;
+    }
+    buffer.push(line);
+    bufferChars += line.length;
+    if (bufferChars >= maxChars) flush();
+  }
+  flush();
+  return chunks;
+}
+
+// Embeds and stores each chunk for an ebook. Returns how many were successfully indexed.
+export async function ingestEbookChunks(ebookId: string, chunks: KnowledgeChunk[], platformTags: PlatformId[]): Promise<number> {
+  const db = getSupabaseAdmin();
+  let inserted = 0;
+  for (const chunk of chunks) {
+    const embedding = await embedText(chunk.content);
+    if (embedding.length === 0) continue;
+    const { error } = await db.from('knowledge_chunks').insert({
+      ebook_id: ebookId,
+      section: chunk.section,
+      platform_tags: platformTags,
+      content: chunk.content,
+      embedding,
+    });
+    if (!error) inserted++;
+    else console.error('[ingestEbookChunks]', error.message);
+  }
+  return inserted;
+}
+
+export function buildPlatformSystemPrompt(platform: PlatformId, language: string, retrievedChunks: KnowledgeChunk[] = []): string {
   const langInstruction = LANGUAGE_INSTRUCTIONS[language] ?? `Write everything in ${language}.`;
+  // RAG chunks from your uploaded guides take priority; fall back to the embedded
+  // frameworks (§7 defaults) when nothing has been indexed yet for this platform.
+  const knowledgeBlock = retrievedChunks.length > 0
+    ? retrievedChunks.map(c => (c.section ? `[${c.section}]\n${c.content}` : c.content)).join('\n\n')
+    : PLATFORM_KNOWLEDGE[platform];
+
   return `Tu es un expert en marketing de contenu et copywriting. ${langInstruction}
 Tu t'appuies sur les CONNAISSANCES DE RÉFÉRENCE ci-dessous comme méthode de structuration — ne les recopie jamais mot pour mot, elles servent de guide, pas de contenu à copier.
 
 CONNAISSANCES DE RÉFÉRENCE :
 ${COPYWRITING_FRAMEWORKS}
 
-${PLATFORM_KNOWLEDGE[platform]}
+${knowledgeBlock}
 
 Règles : contenu 100% original et spécifique à l'offre donnée, jamais générique, jamais de remplissage. CTA toujours clair. Varie les angles entre les variantes demandées. Réponds STRICTEMENT en JSON valide, sans texte avant ou après.`;
 }

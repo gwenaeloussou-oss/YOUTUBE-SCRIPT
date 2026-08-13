@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   getUserPlan, getUserBillingCycle, getMonthlyUsageServer, incrementMonthlyUsageServer, saveHistoryServer,
   FREE_LIMIT, STANDARD_LIMIT, STANDARD_LIMIT_ANNUAL,
-  buildPlatformSystemPrompt, buildPlatformUserPrompt, PLATFORM_LABELS,
+  buildPlatformSystemPrompt, buildPlatformUserPrompt, retrieveKnowledge, PLATFORM_LABELS,
   type PlatformId, type ContentObjective, type OfferInput,
 } from '../lib/server.js';
 
@@ -85,7 +85,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   for (const platformEntry of selectedPlatforms) {
     try {
-      const system = buildPlatformSystemPrompt(platformEntry, offer.language);
+      // RAG retrieval (§6.2): query built from platform + objective + offer sector, as specified.
+      const retrievalQuery = `${PLATFORM_LABELS[platformEntry]} ${selectedObjective} ${offer.sector ?? ''} ${offer.description ?? ''}`.trim().substring(0, 500);
+      const retrievedChunks = await retrieveKnowledge(platformEntry, retrievalQuery);
+
+      const system = buildPlatformSystemPrompt(platformEntry, offer.language, retrievedChunks);
       const userPrompt = buildPlatformUserPrompt(platformEntry, offer, selectedObjective, count);
       const message = await anthropic.messages.create({
         model: 'claude-sonnet-4-6',
