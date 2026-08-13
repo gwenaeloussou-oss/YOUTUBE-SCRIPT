@@ -116,3 +116,10 @@ UPDATE public.profiles SET plan = 'standard' WHERE plan = 'pro';
 -- Ajout expiration abonnement (30 jours + 5 jours de grâce)
 -- ============================================================
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_expires_at timestamptz;
+
+-- ============================================================
+-- Ajout cycle de facturation (mensuel 60 scripts / annuel 100 scripts)
+-- ============================================================
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS billing_cycle text NOT NULL DEFAULT 'monthly';
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_billing_cycle_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_billing_cycle_check CHECK (billing_cycle IN ('monthly', 'annual'));

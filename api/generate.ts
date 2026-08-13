@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
-import { getUserPlan, getMonthlyUsageServer, incrementMonthlyUsageServer, saveHistoryServer, FREE_LIMIT, STANDARD_LIMIT, braveWebSearch, buildSearchQuery, LANGUAGE_INSTRUCTIONS } from '../lib/server.js';
+import { getUserPlan, getUserBillingCycle, getMonthlyUsageServer, incrementMonthlyUsageServer, saveHistoryServer, FREE_LIMIT, STANDARD_LIMIT, STANDARD_LIMIT_ANNUAL, braveWebSearch, buildSearchQuery, LANGUAGE_INSTRUCTIONS } from '../lib/server.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -17,12 +17,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const effectiveWebSearch = isStandard ? (webSearch ?? false) : false;
 
   // Hard server-side usage limit check — cannot be bypassed by the client
-  const limit = isStandard ? STANDARD_LIMIT : FREE_LIMIT;
+  const billingCycle = isStandard ? await getUserBillingCycle(userId) : 'monthly';
+  const standardLimit = billingCycle === 'annual' ? STANDARD_LIMIT_ANNUAL : STANDARD_LIMIT;
+  const limit = isStandard ? standardLimit : FREE_LIMIT;
   const currentUsage = await getMonthlyUsageServer(userId);
   if (currentUsage >= limit) {
     return res.status(429).json({
       error: isStandard
-        ? `Limite de ${STANDARD_LIMIT} scripts/mois atteinte. Renouvelez votre abonnement.`
+        ? `Limite de ${standardLimit} scripts/mois atteinte. Renouvelez votre abonnement.`
         : `Limite de ${FREE_LIMIT} scripts/mois atteinte. Passez au plan Standard pour continuer.`,
       limit_exceeded: true,
       plan,

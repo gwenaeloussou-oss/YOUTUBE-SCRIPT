@@ -13,6 +13,7 @@ type AdminUser = {
   name: string;
   plan: 'free' | 'standard';
   plan_expires_at: string | null;
+  billing_cycle: 'monthly' | 'annual';
   phone: string | null;
   dial_code: string | null;
   country: string | null;
@@ -396,7 +397,7 @@ export default function AdminPage({ onBack }: Props) {
                         <span className={`text-sm font-semibold ${u.usage_this_month > 0 ? 'text-gray-900' : 'text-gray-300'}`}>
                           {u.usage_this_month}
                         </span>
-                        <span className="text-gray-300 text-xs">/{u.plan === 'standard' ? '60' : '5'}</span>
+                        <span className="text-gray-300 text-xs">/{u.plan === 'standard' ? (u.billing_cycle === 'annual' ? '100' : '60') : '5'}</span>
                       </td>
                       <td className="px-5 py-4 text-center">
                         <span className={`text-sm font-semibold ${u.total_scripts > 0 ? 'text-[#FF0000]' : 'text-gray-300'}`}>

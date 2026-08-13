@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import type { HistoryItem } from '../components/HistoryDrawer';
 
-export async function getProfile(userId: string): Promise<{ plan: 'free' | 'standard'; planExpiresAt: string | null }> {
+export async function getProfile(userId: string): Promise<{ plan: 'free' | 'standard'; planExpiresAt: string | null; billingCycle: 'monthly' | 'annual' }> {
   const { data, error } = await supabase
     .from('profiles')
     .select('plan, plan_expires_at')
@@ -9,9 +9,12 @@ export async function getProfile(userId: string): Promise<{ plan: 'free' | 'stan
     .maybeSingle();
   if (error) console.error('[db.getProfile] error:', error.code, error.message);
   if (!data) console.warn('[db.getProfile] no profile row for user:', userId);
+  // Separate query: billing_cycle may not exist yet on older DBs — must not break plan/planExpiresAt above if so.
+  const { data: cycleData } = await supabase.from('profiles').select('billing_cycle').eq('id', userId).maybeSingle();
   return {
     plan: (data?.plan as 'free' | 'standard') ?? 'free',
     planExpiresAt: data?.plan_expires_at ?? null,
+    billingCycle: cycleData?.billing_cycle === 'annual' ? 'annual' : 'monthly',
   };
 }
 

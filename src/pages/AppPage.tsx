@@ -12,7 +12,8 @@ import * as db from '../lib/db';
 import { supabase } from '../lib/supabase';
 
 const FREE_LIMIT = 5;
-const STANDARD_LIMIT = 60;
+const STANDARD_LIMIT_MONTHLY = 60;
+const STANDARD_LIMIT_ANNUAL = 100;
 
 type ScriptResult = {
   titre: string;
@@ -44,9 +45,10 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [planLoading, setPlanLoading] = useState(true);
   const [planExpiresAt, setPlanExpiresAt] = useState<Date | null>(null);
+  const [subscriptionCycle, setSubscriptionCycle] = useState<'monthly' | 'annual'>('monthly');
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [checkoutCycle, setCheckoutCycle] = useState<'monthly' | 'annual'>('monthly');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState('');
@@ -83,7 +85,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const [loadingStep, setLoadingStep] = useState<'transcript' | 'writing' | null>(null);
 
   const isStandard = plan === 'standard';
-  const scriptLimit = isStandard ? STANDARD_LIMIT : FREE_LIMIT;
+  const scriptLimit = isStandard ? (subscriptionCycle === 'annual' ? STANDARD_LIMIT_ANNUAL : STANDARD_LIMIT_MONTHLY) : FREE_LIMIT;
 
   // Expiry helpers
   const now = new Date();
@@ -99,12 +101,13 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
     async function loadUserData() {
       // Run critical data first — plan + usage + history are independent
       const [profileData, usageCount, historyItems] = await Promise.all([
-        db.getProfile(user.id).catch(() => ({ plan: 'free' as const, planExpiresAt: null })),
+        db.getProfile(user.id).catch(() => ({ plan: 'free' as const, planExpiresAt: null, billingCycle: 'monthly' as const })),
         db.getMonthlyUsage(user.id).catch(() => 0),
         db.getHistory(user.id).catch(() => [] as HistoryItem[]),
       ]);
       setPlan(profileData.plan);
       setPlanExpiresAt(profileData.planExpiresAt ? new Date(profileData.planExpiresAt) : null);
+      setSubscriptionCycle(profileData.billingCycle);
       setPlanLoading(false);
       if (profileData.plan === 'free') setLanguage('Français');
       setMonthlyUsage(usageCount);
@@ -334,7 +337,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
 
   const openUpgradeModal = () => {
     setShowUpgradeModal(true);
-    setBillingCycle('monthly');
+    setCheckoutCycle('monthly');
     setCheckoutError(null);
     setPromoCode('');
     setShowPromoInput(false);
@@ -366,7 +369,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
     }
   };
 
-  const handleCheckout = async (plan: 'monthly' | 'annual' = billingCycle) => {
+  const handleCheckout = async (plan: 'monthly' | 'annual' = checkoutCycle) => {
     setCheckoutLoading(true);
     setCheckoutError(null);
     try {
@@ -410,10 +413,10 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
               </div>
 
               <div className="flex bg-gray-100 rounded-2xl p-1">
-                <button onClick={() => setBillingCycle('monthly')} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${billingCycle === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
+                <button onClick={() => setCheckoutCycle('monthly')} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${checkoutCycle === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
                   Mensuel
                 </button>
-                <button onClick={() => setBillingCycle('annual')} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${billingCycle === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
+                <button onClick={() => setCheckoutCycle('annual')} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${checkoutCycle === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
                   Annuel
                 </button>
               </div>
@@ -434,12 +437,12 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                   <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
                   <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
                   <p className="text-2xl font-bold">
-                    {billingCycle === 'monthly' ? '5 000' : '60 000'}
-                    <span className="text-sm font-normal text-gray-400"> {billingCycle === 'monthly' ? 'FCFA/mois' : 'FCFA/an'}</span>
+                    {checkoutCycle === 'monthly' ? '5 000' : '60 000'}
+                    <span className="text-sm font-normal text-gray-400"> {checkoutCycle === 'monthly' ? 'FCFA/mois' : 'FCFA/an'}</span>
                   </p>
-                  {billingCycle === 'annual' && <p className="text-[11px] text-gray-400">soit 5 000 FCFA/mois</p>}
+                  {checkoutCycle === 'annual' && <p className="text-[11px] text-gray-400">soit 5 000 FCFA/mois</p>}
                   <ul className="space-y-2 text-xs text-gray-700">
-                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> 60 scripts / mois</li>
+                    <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> {checkoutCycle === 'annual' ? '100' : '60'} scripts / mois</li>
                     <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> 4 langues</li>
                     <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Recherche web</li>
                     <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> Prompt JSON miniature</li>
@@ -499,7 +502,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                   {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                   {checkoutLoading
                     ? 'Redirection...'
-                    : `${isStandard ? 'Renouveler' : 'Commencer'} — ${billingCycle === 'monthly' ? '5 000 FCFA/mois' : '60 000 FCFA/an'}`}
+                    : `${isStandard ? 'Renouveler' : 'Commencer'} — ${checkoutCycle === 'monthly' ? '5 000 FCFA/mois' : '60 000 FCFA/an'}`}
                   {!checkoutLoading && <ArrowRight className="w-5 h-5" />}
                 </button>
               )}
@@ -569,7 +572,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><Crown className="w-3 h-3" /> Plan actuel</span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isStandard ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'bg-gray-100 text-gray-400'}`}>
-                    {isStandard ? 'Standard' : 'Gratuit'}
+                    {isStandard ? `Standard · ${subscriptionCycle === 'annual' ? 'Annuel' : 'Mensuel'}` : 'Gratuit'}
                   </span>
                 </div>
                 {isStandard && planExpiresAt && (
@@ -593,7 +596,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 </div>
                 {!isStandard && (
                   <button onClick={() => { setShowProfileModal(false); openUpgradeModal(); }} className="w-full text-xs text-[#FF0000] hover:underline text-left flex items-center gap-1.5 font-semibold">
-                    <Crown className="w-3 h-3" /> Passer au Standard — 60 scripts/mois
+                    <Crown className="w-3 h-3" /> Passer au Standard — dès 60 scripts/mois
                   </button>
                 )}
               </div>

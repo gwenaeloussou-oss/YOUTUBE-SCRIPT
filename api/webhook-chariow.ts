@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       await supabaseAdmin
         .from('profiles')
-        .update({ plan: 'standard', plan_expires_at: newExpiry.toISOString() })
+        .update({ plan: 'standard', plan_expires_at: newExpiry.toISOString(), billing_cycle: plan })
         .eq('id', userId);
 
       // Log payment

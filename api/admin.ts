@@ -48,6 +48,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('profiles')
         .select('id, name, plan, plan_expires_at, phone, dial_code, country');
 
+      // Separate query: billing_cycle may not exist yet on older DBs — must not break the rest of the profile fields if so.
+      const { data: cycleRows } = await supabaseAdmin.from('profiles').select('id, billing_cycle');
+      const cycleMap = new Map((cycleRows ?? []).map(c => [c.id, c.billing_cycle]));
+
       const { data: usageRows } = await supabaseAdmin
         .from('usage')
         .select('user_id, count, year, month');
@@ -104,6 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         name: profileMap.get(u.id)?.name ?? '',
         plan: profileMap.get(u.id)?.plan ?? 'free',
         plan_expires_at: profileMap.get(u.id)?.plan_expires_at ?? null,
+        billing_cycle: cycleMap.get(u.id) ?? 'monthly',
         phone: profileMap.get(u.id)?.phone ?? null,
         dial_code: profileMap.get(u.id)?.dial_code ?? null,
         country: profileMap.get(u.id)?.country ?? null,

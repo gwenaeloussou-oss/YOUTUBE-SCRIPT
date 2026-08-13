@@ -11,6 +11,7 @@ function getSupabaseAdmin() {
 const GRACE_DAYS = 5; // days after expiry before hard downgrade
 export const FREE_LIMIT = 5;
 export const STANDARD_LIMIT = 60;
+export const STANDARD_LIMIT_ANNUAL = 100;
 
 export async function getMonthlyUsageServer(userId: string): Promise<number> {
   const db = getSupabaseAdmin();
@@ -85,6 +86,12 @@ export async function getUserPlan(userId?: string): Promise<'free' | 'standard'>
   return 'standard';
 }
 
+export async function getUserBillingCycle(userId?: string): Promise<'monthly' | 'annual'> {
+  if (!userId) return 'monthly';
+  const db = getSupabaseAdmin();
+  const { data } = await db.from('profiles').select('billing_cycle').eq('id', userId).maybeSingle();
+  return data?.billing_cycle === 'annual' ? 'annual' : 'monthly';
+}
 
 export function extractVideoId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);

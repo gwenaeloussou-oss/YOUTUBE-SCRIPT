@@ -410,7 +410,7 @@ export default function LandingPage({ onStart }: Props) {
                 <p className="text-gray-400 text-xs">Soit 5 000 FCFA/mois, facturé une fois par an</p>
               </div>
               <ul className="space-y-3 text-sm">
-                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> 60 scripts par mois</li>
+                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> <span className="font-semibold">100 scripts par mois</span></li>
                 <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Français, English, Español, Português</li>
                 <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Vidéo, article & texte</li>
                 <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Recherche web en temps réel</li>
