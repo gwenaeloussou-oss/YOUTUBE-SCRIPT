@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Youtube, Megaphone, Library, Crown, FileText, Layers, ArrowRight } from 'lucide-react';
+import { Sparkles, Youtube, Megaphone, Library, Crown, FileText, Layers, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
 import type { Page } from '../components/Sidebar';
 import * as db from '../lib/db';
@@ -41,10 +41,11 @@ export default function HomePage({ user, onNavigate }: Props) {
   const firstName = user.name.split(' ')[0] || user.name;
 
   const quickSteps = [
-    { num: '01', title: 'Créez votre première offre', desc: 'Décrivez votre produit ou service pour générer du contenu multi-plateforme.', action: () => onNavigate('content'), icon: <Megaphone className="w-4 h-4" /> },
+    { num: '01', title: 'Créez votre première offre', desc: 'Décrivez votre produit ou service pour générer des posts multi-plateforme.', action: () => onNavigate('content'), icon: <Megaphone className="w-4 h-4" /> },
     { num: '02', title: 'Générez un script vidéo', desc: 'Collez un lien YouTube, un article ou un texte pour un script prêt à tourner.', action: () => onNavigate('app'), icon: <Youtube className="w-4 h-4" /> },
-    { num: '03', title: 'Explorez la bibliothèque', desc: 'Retrouvez tous vos contenus générés, filtrables par plateforme et statut.', action: () => onNavigate('content'), icon: <Library className="w-4 h-4" /> },
-    { num: '04', title: 'Passez au Standard', desc: 'Débloquez plus de scripts, le multilingue et la recherche web.', action: () => onNavigate('app'), icon: <Crown className="w-4 h-4" /> },
+    { num: '03', title: 'Créez une miniature', desc: 'Choisissez un script généré et obtenez son prompt miniature prêt pour l\'IA image.', action: () => onNavigate('thumbnail'), icon: <ImageIcon className="w-4 h-4" /> },
+    { num: '04', title: 'Explorez la bibliothèque', desc: 'Retrouvez tous vos contenus générés, filtrables par plateforme et statut.', action: () => onNavigate('content'), icon: <Library className="w-4 h-4" /> },
+    { num: '05', title: 'Passez au Standard', desc: 'Débloquez plus de scripts, le multilingue et la recherche web.', action: () => onNavigate('app'), icon: <Crown className="w-4 h-4" /> },
   ];
 
   return (
@@ -57,14 +58,14 @@ export default function HomePage({ user, onNavigate }: Props) {
             <span className="text-[#FF0000]">que créons-nous aujourd'hui ?</span>
           </h1>
           <p className="text-gray-500 text-base max-w-lg">
-            Générez des scripts vidéo et du contenu multi-plateforme avec l'IA. Choisissez un outil ci-dessous pour commencer.
+            Générez des scripts vidéo et des posts multi-plateforme avec l'IA. Choisissez un outil ci-dessous pour commencer.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button onClick={() => onNavigate('app')} className="flex items-center justify-center gap-2 bg-[#FF0000] hover:bg-[#D90000] text-white px-6 py-3.5 rounded-2xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-red-500/20">
               <Sparkles className="w-4 h-4" /> Générer un script YouTube
             </button>
             <button onClick={() => onNavigate('content')} className="flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 px-6 py-3.5 rounded-2xl text-sm font-semibold transition-all active:scale-95 text-gray-700">
-              <Megaphone className="w-4 h-4" /> Contenu multi-plateforme
+              <Megaphone className="w-4 h-4" /> Post Multiplateforme
             </button>
           </div>
         </motion.div>
@@ -104,7 +105,7 @@ export default function HomePage({ user, onNavigate }: Props) {
 
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Commencez en 4 étapes</h2>
+          <h2 className="text-lg font-bold text-gray-900">Commencez en 5 étapes</h2>
           <p className="text-gray-400 text-sm">Réglez ces points pour libérer votre flux créatif.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

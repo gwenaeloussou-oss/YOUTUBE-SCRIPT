@@ -27,6 +27,9 @@ const PLATFORM_META: Record<PlatformId, { label: string; icon: ReactNode; color:
   facebook_comment: { label: 'Commentaire Facebook', icon: <MessageCircle className="w-4 h-4" />, color: 'text-indigo-600' },
 };
 
+// Post Multiplateforme ne génère que des posts — les scripts vidéo restent dans l'outil Script YouTube dédié.
+const GENERATABLE_PLATFORMS: PlatformId[] = ['facebook', 'linkedin', 'facebook_comment'];
+
 const OBJECTIVE_LABELS: Record<Objective, string> = {
   notoriete: 'Notoriété',
   engagement: 'Engagement',
@@ -75,7 +78,7 @@ export default function ContentStudioPage({ user }: Props) {
   const [deleteOfferId, setDeleteOfferId] = useState<string | null>(null);
 
   const [selectedOfferId, setSelectedOfferId] = useState<string>('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(['youtube_long']);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(['facebook']);
   const [objective, setObjective] = useState<Objective>('conversion');
   const [variantCount, setVariantCount] = useState(3);
   const [generating, setGenerating] = useState(false);
@@ -220,7 +223,7 @@ export default function ContentStudioPage({ user }: Props) {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Megaphone className="w-5 h-5 text-[#FF0000]" />
-            <h1 className="text-lg font-bold tracking-tight">Contenu multi-plateforme</h1>
+            <h1 className="text-lg font-bold tracking-tight">Post Multiplateforme</h1>
           </div>
           {!planLoading && (
             <span className="text-xs text-gray-500">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
@@ -320,7 +323,7 @@ export default function ContentStudioPage({ user }: Props) {
                   <div className="space-y-3">
                     <label className="text-xs uppercase tracking-widest font-semibold text-gray-400">Plateformes</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {(Object.keys(PLATFORM_META) as PlatformId[]).map(p => (
+                      {GENERATABLE_PLATFORMS.map(p => (
                         <button
                           key={p}
                           onClick={() => togglePlatform(p)}

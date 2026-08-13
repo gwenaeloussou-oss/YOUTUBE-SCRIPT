@@ -1,9 +1,9 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { Home, Youtube, Megaphone, Shield, LogOut, Crown, X } from 'lucide-react';
+import { Home, Youtube, Megaphone, Image as ImageIcon, Shield, LogOut, Crown, X } from 'lucide-react';
 import type { LoggedUser } from '../pages/AuthPage';
 import * as db from '../lib/db';
 
-export type Page = 'home' | 'app' | 'content' | 'admin';
+export type Page = 'home' | 'app' | 'content' | 'thumbnail' | 'admin';
 
 const FREE_LIMIT = 5;
 const STANDARD_LIMIT_MONTHLY = 60;
@@ -38,7 +38,8 @@ export default function Sidebar({ user, activePage, isAdmin, onNavigate, onOpenP
   const navItems: NavItem[] = [
     { page: 'home', label: 'Accueil', icon: <Home className="w-4 h-4" /> },
     { page: 'app', label: 'Script YouTube', icon: <Youtube className="w-4 h-4" /> },
-    { page: 'content', label: 'Contenu multi-plateforme', icon: <Megaphone className="w-4 h-4" /> },
+    { page: 'content', label: 'Post Multiplateforme', icon: <Megaphone className="w-4 h-4" /> },
+    { page: 'thumbnail', label: 'Miniature', icon: <ImageIcon className="w-4 h-4" /> },
   ];
   if (isAdmin) navItems.push({ page: 'admin', label: 'Admin', icon: <Shield className="w-4 h-4" /> });
 

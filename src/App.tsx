@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import AppPage from './pages/AppPage';
 import AdminPage from './pages/AdminPage';
 import ContentStudioPage from './pages/ContentStudioPage';
+import ThumbnailPage from './pages/ThumbnailPage';
 import AppShell from './components/AppShell';
 import type { Page as ShellPage } from './components/Sidebar';
 import { supabase } from './lib/supabase';
@@ -65,13 +66,14 @@ export default function App() {
   if (page === 'auth') return <AuthPage onBack={() => setPage('landing')} onAuth={handleAuth} />;
 
   const isAdmin = user?.email === ADMIN_EMAIL;
-  const shellPage = (page === 'home' || page === 'app' || page === 'content' || page === 'admin') ? page : 'home';
+  const shellPage = (page === 'home' || page === 'app' || page === 'content' || page === 'thumbnail' || page === 'admin') ? page : 'home';
 
   return (
     <AppShell user={user!} activePage={shellPage} isAdmin={isAdmin} onNavigate={setPage} onLogout={handleLogout}>
       {shellPage === 'home' && <HomePage user={user!} onNavigate={setPage} />}
       {shellPage === 'app' && <AppPage user={user!} />}
       {shellPage === 'content' && <ContentStudioPage user={user!} />}
+      {shellPage === 'thumbnail' && <ThumbnailPage user={user!} onNavigate={setPage} />}
       {shellPage === 'admin' && isAdmin && <AdminPage user={user!} />}
     </AppShell>
   );
