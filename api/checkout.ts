@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const CHARIOW_API_KEY = process.env.CHARIOW_API_KEY!;
 const PRODUCT_IDS: Record<'monthly' | 'annual', string | undefined> = {
   monthly: 'prd_cdmpssyt',
-  annual: process.env.CHARIOW_PRODUCT_ANNUAL,
+  annual: 'prd_9xnj6y5d',
 };
 
 const supabaseAdmin = createClient(
