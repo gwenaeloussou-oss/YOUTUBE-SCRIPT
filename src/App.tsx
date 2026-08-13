@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import LandingPage from './pages/LandingPage';
 import AuthPage, { type LoggedUser } from './pages/AuthPage';
+import HomePage from './pages/HomePage';
 import AppPage from './pages/AppPage';
 import AdminPage from './pages/AdminPage';
 import ContentStudioPage from './pages/ContentStudioPage';
+import AppShell from './components/AppShell';
+import type { Page as ShellPage } from './components/Sidebar';
 import { supabase } from './lib/supabase';
 
 const ADMIN_EMAIL = 'gwenaeloussou@gmail.com';
 
-type Page = 'landing' | 'auth' | 'app' | 'admin' | 'content';
+type Page = 'landing' | 'auth' | ShellPage;
 
 export default function App() {
   const [user, setUser] = useState<LoggedUser | null>(null);
@@ -20,7 +23,7 @@ export default function App() {
       if (session?.user) {
         const u = session.user;
         setUser({ id: u.id, name: u.user_metadata?.name ?? u.email ?? '', email: u.email ?? '' });
-        setPage('app');
+        setPage('home');
       }
       setInitializing(false);
     });
@@ -29,7 +32,7 @@ export default function App() {
       if (event === 'SIGNED_IN' && session?.user) {
         const u = session.user;
         setUser({ id: u.id, name: u.user_metadata?.name ?? u.email ?? '', email: u.email ?? '' });
-        setPage('app');
+        setPage('home');
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setPage('landing');
@@ -41,7 +44,7 @@ export default function App() {
 
   const handleAuth = (loggedUser: LoggedUser) => {
     setUser(loggedUser);
-    setPage('app');
+    setPage('home');
   };
 
   const handleLogout = async () => {
@@ -60,14 +63,16 @@ export default function App() {
 
   if (page === 'landing') return <LandingPage onStart={() => setPage('auth')} />;
   if (page === 'auth') return <AuthPage onBack={() => setPage('landing')} onAuth={handleAuth} />;
-  if (page === 'admin') return <AdminPage user={user!} onBack={() => setPage('app')} />;
-  if (page === 'content') return <ContentStudioPage user={user!} onBack={() => setPage('app')} onLogout={handleLogout} />;
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
+  const shellPage = (page === 'home' || page === 'app' || page === 'content' || page === 'admin') ? page : 'home';
+
   return (
-    <AppPage
-      user={user!}
-      onLogout={handleLogout}
-      onAdmin={user?.email === ADMIN_EMAIL ? () => setPage('admin') : undefined}
-      onContentStudio={() => setPage('content')}
-    />
+    <AppShell user={user!} activePage={shellPage} isAdmin={isAdmin} onNavigate={setPage} onLogout={handleLogout}>
+      {shellPage === 'home' && <HomePage user={user!} onNavigate={setPage} />}
+      {shellPage === 'app' && <AppPage user={user!} />}
+      {shellPage === 'content' && <ContentStudioPage user={user!} />}
+      {shellPage === 'admin' && isAdmin && <AdminPage user={user!} />}
+    </AppShell>
   );
 }

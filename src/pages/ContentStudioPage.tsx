@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  ArrowLeft, LogOut, Plus, Pencil, Trash2, Sparkles, Loader2, AlertCircle,
+  Plus, Pencil, Trash2, Sparkles, Loader2, AlertCircle,
   Youtube, Facebook, Linkedin, Clapperboard, Check, Copy, ChevronDown,
   Library, Megaphone, Lock, X, Filter, MessageCircle,
 } from 'lucide-react';
@@ -56,9 +56,9 @@ const EMPTY_OFFER_FORM = {
   differentiators: '', proof: '', commercialTerms: '', cta: '', brandTone: 'expert', language: 'Français',
 };
 
-type Props = { user: LoggedUser; onBack: () => void; onLogout: () => void };
+type Props = { user: LoggedUser };
 
-export default function ContentStudioPage({ user, onBack, onLogout }: Props) {
+export default function ContentStudioPage({ user }: Props) {
   const [tab, setTab] = useState<Tab>('offers');
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
@@ -214,30 +214,19 @@ export default function ContentStudioPage({ user, onBack, onLogout }: Props) {
   const selectedOffer = offers.find(o => o.id === selectedOfferId);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
-      {/* Header */}
-      <header className="border-b border-gray-200 py-5 px-4 md:px-12 sticky top-0 z-40 bg-white/90 backdrop-blur-md">
+    <div className="text-gray-900 font-sans">
+      {/* Page title bar */}
+      <div className="border-b border-gray-100 py-5 px-4 md:px-12">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors text-sm">
-              <ArrowLeft className="w-4 h-4" /> Retour
-            </button>
-            <div className="w-px h-5 bg-gray-200 hidden sm:block" />
-            <div className="hidden sm:flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-[#FF0000]" />
-              <h1 className="text-lg font-bold tracking-tight">Contenu multi-plateforme</h1>
-            </div>
-          </div>
           <div className="flex items-center gap-2">
-            {!planLoading && (
-              <span className="text-xs text-gray-500 hidden sm:block">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
-            )}
-            <button onClick={onLogout} className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-red-50 hover:border-red-200 transition-all group">
-              <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors" />
-            </button>
+            <Megaphone className="w-5 h-5 text-[#FF0000]" />
+            <h1 className="text-lg font-bold tracking-tight">Contenu multi-plateforme</h1>
           </div>
+          {!planLoading && (
+            <span className="text-xs text-gray-500">{monthlyUsage}/{scriptLimit} scripts ce mois</span>
+          )}
         </div>
-      </header>
+      </div>
 
       {/* Tabs */}
       <div className="max-w-6xl mx-auto px-4 md:px-12 pt-8">

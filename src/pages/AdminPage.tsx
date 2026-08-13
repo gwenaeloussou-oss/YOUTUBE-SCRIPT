@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Users, Crown, BarChart3, Trash2, Key, ChevronLeft,
+  Users, Crown, BarChart3, Trash2, Key,
   Loader2, Check, X, AlertCircle, RefreshCw, Shield,
   TrendingUp, UserCheck, UserX, CreditCard, DollarSign,
   BookOpen, Plus,
@@ -65,7 +65,7 @@ function formatAmount(amount: number | null, currency = 'XOF') {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 }
 
-type Props = { user: LoggedUser; onBack: () => void };
+type Props = { user: LoggedUser };
 
 async function adminPost(body: Record<string, unknown>) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -87,7 +87,7 @@ async function knowledgePost(body: Record<string, unknown>) {
   });
 }
 
-export default function AdminPage({ onBack }: Props) {
+export default function AdminPage(_props: Props) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
@@ -245,7 +245,7 @@ export default function AdminPage({ onBack }: Props) {
   const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="text-gray-900 font-sans">
 
       {/* Toast */}
       {actionToast && (
@@ -334,21 +334,16 @@ export default function AdminPage({ onBack }: Props) {
         </div>
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-4 py-4">
+      {/* Page title bar */}
+      <div className="border-b border-gray-100 px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-all">
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-sm">Administration</h1>
-                <p className="text-gray-400 text-xs">YouScript Booster</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-sm">Administration</h1>
+              <p className="text-gray-400 text-xs">YouScript Booster</p>
             </div>
           </div>
           <button onClick={load} disabled={loading} className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-600 hover:text-gray-900 text-sm">
@@ -356,7 +351,7 @@ export default function AdminPage({ onBack }: Props) {
             <span className="hidden sm:block">Actualiser</span>
           </button>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
 

@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Youtube, Languages, Sparkles, Copy, Download, RotateCcw, Check,
-  AlertCircle, Loader2, Layout, Type, FileText, LogOut, AlignLeft,
-  Newspaper, History, Braces, Globe, Lock, Crown, X, Zap, Shield,
-  Pencil, Camera, ArrowRight, Phone, Mail, User, Megaphone,
+  AlertCircle, Loader2, Layout, Type, FileText, AlignLeft,
+  Newspaper, History, Braces, Globe, Lock, Crown, X, Zap,
+  ArrowRight,
 } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
 import HistoryDrawer, { type HistoryItem } from '../components/HistoryDrawer';
 import * as db from '../lib/db';
-import { supabase } from '../lib/supabase';
 
 const FREE_LIMIT = 5;
 const STANDARD_LIMIT_MONTHLY = 60;
@@ -39,9 +38,9 @@ const LANGUAGES = [
   { id: 'Português', label: 'Português' },
 ];
 
-type Props = { user: LoggedUser; onLogout: () => void; onAdmin?: () => void; onContentStudio: () => void };
+type Props = { user: LoggedUser };
 
-export default function AppPage({ user, onLogout, onAdmin, onContentStudio }: Props) {
+export default function AppPage({ user }: Props) {
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [planLoading, setPlanLoading] = useState(true);
   const [planExpiresAt, setPlanExpiresAt] = useState<Date | null>(null);
@@ -56,14 +55,6 @@ export default function AppPage({ user, onLogout, onAdmin, onContentStudio }: Pr
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [profileName, setProfileName] = useState(user.name);
-  const [profilePhone, setProfilePhone] = useState('');
-  const [profileEmail, setProfileEmail] = useState(user.email);
-  const [profileAvatar, setProfileAvatar] = useState('');
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -112,52 +103,9 @@ export default function AppPage({ user, onLogout, onAdmin, onContentStudio }: Pr
       if (profileData.plan === 'free') setLanguage('Français');
       setMonthlyUsage(usageCount);
       setHistory(historyItems);
-
-      // Load extended profile separately — don't let it block history
-      db.getFullProfile(user.id)
-        .then(fullProfile => {
-          setProfileName(fullProfile.name || user.name);
-          setProfilePhone(fullProfile.phone || '');
-          setProfileEmail(fullProfile.email || user.email);
-          setProfileAvatar(fullProfile.avatar_url || '');
-        })
-        .catch(() => {
-          setProfileName(user.name);
-          setProfileEmail(user.email);
-        });
     }
     loadUserData();
   }, [user.id]);
-
-  const handleSaveProfile = async () => {
-    setProfileLoading(true);
-    setProfileError(null);
-    try {
-      await db.updateProfile(user.id, {
-        name: profileName.trim(),
-        phone: profilePhone.trim(),
-        avatar_url: profileAvatar.trim(),
-      });
-      if (profileEmail.trim() !== user.email) {
-        const { error } = await supabase.auth.updateUser({ email: profileEmail.trim() });
-        if (error) throw new Error("Erreur changement email : " + error.message);
-      }
-      setProfileSaved(true);
-      setTimeout(() => { setProfileSaved(false); setShowProfileModal(false); }, 1500);
-    } catch (err) {
-      setProfileError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde.');
-    } finally {
-      setProfileLoading(false);
-    }
-  };
-
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setProfileAvatar(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  };
 
   const stripMarkdownTitle = (text: string) => {
     let cleaned = text
@@ -391,7 +339,7 @@ export default function AppPage({ user, onLogout, onAdmin, onContentStudio }: Pr
   const remainingScripts = Math.max(0, scriptLimit - monthlyUsage);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans overflow-x-hidden">
+    <div className="text-gray-900 font-sans overflow-x-hidden">
 
       {/* Upgrade Modal */}
       <AnimatePresence>
@@ -521,174 +469,42 @@ export default function AppPage({ user, onLogout, onAdmin, onContentStudio }: Pr
         )}
       </AnimatePresence>
 
-      {/* Profile Modal */}
-      <AnimatePresence>
-        {showProfileModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-3xl p-6 space-y-5">
+      {/* Page top bar — page-specific actions only, nav/profile now live in the sidebar */}
+      <div className="max-w-7xl mx-auto px-4 pt-8 flex items-center justify-end gap-2">
+        <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-600 hover:text-gray-900">
+          <History className="w-4 h-4" />
+          <span className="text-sm hidden sm:block">Historique</span>
+          {history.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF0000] rounded-full text-[9px] font-bold flex items-center justify-center text-white">{history.length > 9 ? '9+' : history.length}</span>}
+        </button>
 
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-base">Mon profil</h2>
-                <button onClick={() => setShowProfileModal(false)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all"><X className="w-4 h-4" /></button>
-              </div>
-
-              {/* Avatar */}
-              <div className="flex flex-col items-center gap-3">
-                <label className="relative cursor-pointer group">
-                  {profileAvatar ? (
-                    <img src={profileAvatar} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 group-hover:border-gray-300 transition-all" />
-                  ) : (
-                    <div className="w-20 h-20 rounded-full bg-[#FF0000]/20 border-2 border-[#FF0000]/30 flex items-center justify-center text-2xl font-bold text-[#FF0000] group-hover:border-[#FF0000]/60 transition-all">
-                      {(profileName || user.name).charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera className="w-5 h-5 text-white" />
-                  </div>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                </label>
-                <p className="text-gray-400 text-xs">Cliquez pour changer la photo</p>
-              </div>
-
-              {/* Fields */}
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><User className="w-3 h-3" /> Nom complet</label>
-                  <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="Votre nom" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-300 transition-all placeholder-gray-400" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><Mail className="w-3 h-3" /> Email</label>
-                  <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} placeholder="votre@email.com" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-300 transition-all placeholder-gray-400" />
-                  {profileEmail !== user.email && <p className="text-orange-600 text-xs pl-1">Un email de confirmation vous sera envoyé</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><Phone className="w-3 h-3" /> Téléphone</label>
-                  <input type="tel" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} placeholder="+225 07 00 00 00 00" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-300 transition-all placeholder-gray-400" />
-                </div>
-              </div>
-
-              {/* Plan & usage */}
-              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-xs font-medium flex items-center gap-1.5"><Crown className="w-3 h-3" /> Plan actuel</span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isStandard ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'bg-gray-100 text-gray-400'}`}>
-                    {isStandard ? `Standard · ${subscriptionCycle === 'annual' ? 'Annuel' : 'Mensuel'}` : 'Gratuit'}
-                  </span>
-                </div>
-                {isStandard && planExpiresAt && (
-                  <p className="text-xs text-gray-400">
-                    Expire le <span className="text-gray-700 font-semibold">{planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-                    {inGrace && <span className="ml-2 text-red-600 font-semibold">(période de grâce)</span>}
-                  </p>
-                )}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">Scripts ce mois</span>
-                    <span className="text-xs font-bold text-gray-700">{monthlyUsage} / {scriptLimit}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                    <div
-                      className={`h-1.5 rounded-full transition-all ${monthlyUsage >= scriptLimit ? 'bg-red-500' : 'bg-[#FF0000]'}`}
-                      style={{ width: `${Math.min(100, (monthlyUsage / scriptLimit) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-gray-400">{Math.max(0, scriptLimit - monthlyUsage)} script{scriptLimit - monthlyUsage > 1 ? 's' : ''} restant{scriptLimit - monthlyUsage > 1 ? 's' : ''} ce mois</p>
-                </div>
-                {!isStandard && (
-                  <button onClick={() => { setShowProfileModal(false); openUpgradeModal(); }} className="w-full text-xs text-[#FF0000] hover:underline text-left flex items-center gap-1.5 font-semibold">
-                    <Crown className="w-3 h-3" /> Passer au Standard — dès 60 scripts/mois
-                  </button>
-                )}
-              </div>
-
-              {profileError && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs">
-                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{profileError}
-                </div>
-              )}
-
-              <button onClick={handleSaveProfile} disabled={profileLoading || profileSaved} className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-gray-100 disabled:text-gray-300 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 transition-all text-white shadow-lg shadow-green-500/20">
-                {profileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : profileSaved ? <Check className="w-4 h-4" /> : null}
-                {profileLoading ? 'Sauvegarde...' : profileSaved ? 'Sauvegardé !' : 'Enregistrer'}
-                {!profileLoading && !profileSaved && <ArrowRight className="w-4 h-4" />}
-              </button>
-
-            </motion.div>
-          </motion.div>
+        {planLoading ? (
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+            <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
+            <span className="text-xs text-gray-400 hidden sm:block">...</span>
+          </div>
+        ) : isStandard ? (
+          <button onClick={openUpgradeModal} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${inGrace ? 'bg-red-50 border-red-200' : showExpiryWarning ? 'bg-orange-50 border-orange-200' : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'}`}>
+            <Crown className={`w-3.5 h-3.5 ${inGrace ? 'text-red-600' : showExpiryWarning ? 'text-orange-600' : 'text-yellow-600'}`} />
+            <span className={`text-xs font-bold ${inGrace ? 'text-red-600' : showExpiryWarning ? 'text-orange-600' : 'text-yellow-600'}`}>STANDARD</span>
+            {inGrace && graceDaysLeft !== null && (
+              <span className="text-xs text-red-600 hidden sm:block">· grâce {graceDaysLeft}j</span>
+            )}
+            {!inGrace && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
+              <span className="text-xs text-orange-600 hidden sm:block">· {daysUntilExpiry}j</span>
+            )}
+            {!inGrace && (daysUntilExpiry === null || daysUntilExpiry > 7) && planExpiresAt && (
+              <span className="text-xs text-yellow-600 hidden sm:block">· {planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+            )}
+          </button>
+        ) : (
+          <button onClick={openUpgradeModal} className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-500 hover:text-gray-900 text-xs font-semibold">
+            <Crown className="w-3.5 h-3.5" />
+            <span className="hidden sm:block">Standard</span>
+            <span className="text-gray-400 hidden sm:block">·</span>
+            <span className="text-[#FF0000] hidden sm:block">{remainingScripts}/{FREE_LIMIT}</span>
+          </button>
         )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <header className="border-b border-gray-200 py-5 px-4 md:px-12 backdrop-blur-md sticky top-0 z-50 bg-white/90">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src="https://images.chariowcdn.com/cdn-cgi/image/format=auto,onerror=redirect,quality=medium-high,slow-connection-quality=50/https://assets.chariowcdn.com/assets/store_udv1gsypk62r/OAcPlra4gZkj4g0IwsDyTNxGlId1hIxTP7K8FHMl.jpg" alt="logo" className="w-12 h-12 rounded-lg object-cover" />
-            <h1 className="text-xl font-bold tracking-tighter">YouScript <span className="text-[#FF0000]">Booster</span></h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {onAdmin && (
-              <button onClick={onAdmin} className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl hover:bg-purple-100 transition-all text-purple-600 hover:text-purple-700">
-                <Shield className="w-4 h-4" />
-                <span className="text-sm hidden sm:block font-medium">Admin</span>
-              </button>
-            )}
-            <button onClick={onContentStudio} className="flex items-center gap-1.5 px-3 py-2 bg-[#FF0000]/5 border border-[#FF0000]/20 rounded-xl hover:bg-[#FF0000]/10 transition-all text-[#FF0000] font-medium">
-              <Megaphone className="w-4 h-4" />
-              <span className="text-sm hidden sm:block">Contenu multi-plateforme</span>
-            </button>
-            <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-600 hover:text-gray-900">
-              <History className="w-4 h-4" />
-              <span className="text-sm hidden sm:block">Historique</span>
-              {history.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF0000] rounded-full text-[9px] font-bold flex items-center justify-center text-white">{history.length > 9 ? '9+' : history.length}</span>}
-            </button>
-
-            {planLoading ? (
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl">
-                <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
-                <span className="text-xs text-gray-400 hidden sm:block">...</span>
-              </div>
-            ) : isStandard ? (
-              <button onClick={openUpgradeModal} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${inGrace ? 'bg-red-50 border-red-200' : showExpiryWarning ? 'bg-orange-50 border-orange-200' : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'}`}>
-                <Crown className={`w-3.5 h-3.5 ${inGrace ? 'text-red-600' : showExpiryWarning ? 'text-orange-600' : 'text-yellow-600'}`} />
-                <span className={`text-xs font-bold ${inGrace ? 'text-red-600' : showExpiryWarning ? 'text-orange-600' : 'text-yellow-600'}`}>STANDARD</span>
-                {inGrace && graceDaysLeft !== null && (
-                  <span className="text-xs text-red-600 hidden sm:block">· grâce {graceDaysLeft}j</span>
-                )}
-                {!inGrace && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
-                  <span className="text-xs text-orange-600 hidden sm:block">· {daysUntilExpiry}j</span>
-                )}
-                {!inGrace && (daysUntilExpiry === null || daysUntilExpiry > 7) && planExpiresAt && (
-                  <span className="text-xs text-yellow-600 hidden sm:block">· {planExpiresAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
-                )}
-              </button>
-            ) : (
-              <button onClick={openUpgradeModal} className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-500 hover:text-gray-900 text-xs font-semibold">
-                <Crown className="w-3.5 h-3.5" />
-                <span className="hidden sm:block">Standard</span>
-                <span className="text-gray-400 hidden sm:block">·</span>
-                <span className="text-[#FF0000] hidden sm:block">{remainingScripts}/{FREE_LIMIT}</span>
-              </button>
-            )}
-
-            <button onClick={() => setShowProfileModal(true)} className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all group">
-              <div className="relative w-6 h-6 flex-shrink-0">
-                {profileAvatar ? (
-                  <img src={profileAvatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-[#FF0000]/20 border border-[#FF0000]/30 flex items-center justify-center text-[10px] font-bold text-[#FF0000]">{(profileName || user.name).charAt(0).toUpperCase()}</div>
-                )}
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-white border border-gray-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Pencil className="w-1.5 h-1.5 text-gray-600" />
-                </div>
-              </div>
-              <span className="text-sm text-gray-700 hidden sm:block">{profileName || user.name}</span>
-            </button>
-            <button onClick={onLogout} className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-red-50 hover:border-red-200 transition-all group">
-              <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors" />
-            </button>
-          </div>
-        </div>
-      </header>
+      </div>
 
       {/* Expiry warning banner */}
       {showExpiryWarning && (
