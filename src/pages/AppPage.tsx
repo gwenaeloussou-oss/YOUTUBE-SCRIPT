@@ -4,7 +4,7 @@ import {
   Youtube, Languages, Sparkles, Copy, Download, RotateCcw, Check,
   AlertCircle, Loader2, Layout, Type, FileText, LogOut, AlignLeft,
   Newspaper, History, Braces, Globe, Lock, Crown, X, Zap, Shield,
-  Pencil, Camera, ArrowRight, Phone, Mail, User,
+  Pencil, Camera, ArrowRight, Phone, Mail, User, Megaphone,
 } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
 import HistoryDrawer, { type HistoryItem } from '../components/HistoryDrawer';
@@ -39,9 +39,9 @@ const LANGUAGES = [
   { id: 'Português', label: 'Português' },
 ];
 
-type Props = { user: LoggedUser; onLogout: () => void; onAdmin?: () => void };
+type Props = { user: LoggedUser; onLogout: () => void; onAdmin?: () => void; onContentStudio: () => void };
 
-export default function AppPage({ user, onLogout, onAdmin }: Props) {
+export default function AppPage({ user, onLogout, onAdmin, onContentStudio }: Props) {
   const [plan, setPlan] = useState<'free' | 'standard'>('free');
   const [planLoading, setPlanLoading] = useState(true);
   const [planExpiresAt, setPlanExpiresAt] = useState<Date | null>(null);
@@ -632,6 +632,10 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 <span className="text-sm hidden sm:block font-medium">Admin</span>
               </button>
             )}
+            <button onClick={onContentStudio} className="flex items-center gap-1.5 px-3 py-2 bg-[#FF0000]/5 border border-[#FF0000]/20 rounded-xl hover:bg-[#FF0000]/10 transition-all text-[#FF0000] font-medium">
+              <Megaphone className="w-4 h-4" />
+              <span className="text-sm hidden sm:block">Contenu multi-plateforme</span>
+            </button>
             <button onClick={() => setHistoryOpen(true)} className="relative flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-all text-gray-600 hover:text-gray-900">
               <History className="w-4 h-4" />
               <span className="text-sm hidden sm:block">Historique</span>

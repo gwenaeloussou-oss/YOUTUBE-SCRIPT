@@ -3,11 +3,12 @@ import LandingPage from './pages/LandingPage';
 import AuthPage, { type LoggedUser } from './pages/AuthPage';
 import AppPage from './pages/AppPage';
 import AdminPage from './pages/AdminPage';
+import ContentStudioPage from './pages/ContentStudioPage';
 import { supabase } from './lib/supabase';
 
 const ADMIN_EMAIL = 'gwenaeloussou@gmail.com';
 
-type Page = 'landing' | 'auth' | 'app' | 'admin';
+type Page = 'landing' | 'auth' | 'app' | 'admin' | 'content';
 
 export default function App() {
   const [user, setUser] = useState<LoggedUser | null>(null);
@@ -60,11 +61,13 @@ export default function App() {
   if (page === 'landing') return <LandingPage onStart={() => setPage('auth')} />;
   if (page === 'auth') return <AuthPage onBack={() => setPage('landing')} onAuth={handleAuth} />;
   if (page === 'admin') return <AdminPage user={user!} onBack={() => setPage('app')} />;
+  if (page === 'content') return <ContentStudioPage user={user!} onBack={() => setPage('app')} onLogout={handleLogout} />;
   return (
     <AppPage
       user={user!}
       onLogout={handleLogout}
       onAdmin={user?.email === ADMIN_EMAIL ? () => setPage('admin') : undefined}
+      onContentStudio={() => setPage('content')}
     />
   );
 }

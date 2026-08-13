@@ -64,13 +64,21 @@ export async function getHistory(userId: string): Promise<HistoryItem[]> {
   return (data ?? []).map(row => ({
     id: row.id,
     date: row.created_at,
-    sourceType: row.source_type as 'video' | 'article' | 'text',
+    sourceType: row.source_type as 'video' | 'article' | 'text' | 'offer',
     sourceUrl: row.source_url ?? '',
     language: row.language,
     wordCount: row.word_count ?? 0,
     titre: row.titre,
     result: row.result,
+    platform: row.platform ?? undefined,
+    offerId: row.offer_id ?? undefined,
+    objective: row.objective ?? undefined,
+    status: row.status ?? undefined,
   }));
+}
+
+export async function updateContentStatus(id: string, status: 'draft' | 'validated' | 'scheduled' | 'published'): Promise<void> {
+  await supabase.from('history').update({ status }).eq('id', id);
 }
 
 export async function addHistory(userId: string, item: {
@@ -141,4 +149,110 @@ export async function getFullProfile(userId: string): Promise<{ name: string; ph
     avatar_url: profile?.avatar_url ?? '',
     email: user?.email ?? '',
   };
+}
+
+// ── Offres (fiche produit/service réutilisable pour la génération multi-plateforme) ──
+
+export type Offer = {
+  id: string;
+  name: string;
+  sector: string;
+  description: string;
+  target: string;
+  promise: string;
+  differentiators: string;
+  proof: string;
+  commercialTerms: string;
+  cta: string;
+  brandTone: string;
+  language: string;
+  createdAt: string;
+};
+
+type OfferRow = {
+  id: string;
+  name: string;
+  sector: string | null;
+  description: string | null;
+  target: string | null;
+  promise: string | null;
+  differentiators: string | null;
+  proof: string | null;
+  commercial_terms: string | null;
+  cta: string | null;
+  brand_tone: string | null;
+  language: string | null;
+  created_at: string;
+};
+
+function mapOfferRow(row: OfferRow): Offer {
+  return {
+    id: row.id,
+    name: row.name,
+    sector: row.sector ?? '',
+    description: row.description ?? '',
+    target: row.target ?? '',
+    promise: row.promise ?? '',
+    differentiators: row.differentiators ?? '',
+    proof: row.proof ?? '',
+    commercialTerms: row.commercial_terms ?? '',
+    cta: row.cta ?? '',
+    brandTone: row.brand_tone ?? 'expert',
+    language: row.language ?? 'Français',
+    createdAt: row.created_at,
+  };
+}
+
+export async function getOffers(userId: string): Promise<Offer[]> {
+  const { data, error } = await supabase
+    .from('offers')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('[db.getOffers]', error.code, error.message); return []; }
+  return (data ?? []).map(mapOfferRow);
+}
+
+export async function createOffer(userId: string, offer: Omit<Offer, 'id' | 'createdAt'>): Promise<Offer | null> {
+  const { data, error } = await supabase
+    .from('offers')
+    .insert({
+      user_id: userId,
+      name: offer.name,
+      sector: offer.sector,
+      description: offer.description,
+      target: offer.target,
+      promise: offer.promise,
+      differentiators: offer.differentiators,
+      proof: offer.proof,
+      commercial_terms: offer.commercialTerms,
+      cta: offer.cta,
+      brand_tone: offer.brandTone,
+      language: offer.language,
+    })
+    .select()
+    .single();
+  if (error) { console.error('[db.createOffer]', error.code, error.message); return null; }
+  return mapOfferRow(data);
+}
+
+export async function updateOffer(id: string, fields: Partial<Omit<Offer, 'id' | 'createdAt'>>): Promise<void> {
+  const updates: Record<string, string> = {};
+  if (fields.name !== undefined) updates.name = fields.name;
+  if (fields.sector !== undefined) updates.sector = fields.sector;
+  if (fields.description !== undefined) updates.description = fields.description;
+  if (fields.target !== undefined) updates.target = fields.target;
+  if (fields.promise !== undefined) updates.promise = fields.promise;
+  if (fields.differentiators !== undefined) updates.differentiators = fields.differentiators;
+  if (fields.proof !== undefined) updates.proof = fields.proof;
+  if (fields.commercialTerms !== undefined) updates.commercial_terms = fields.commercialTerms;
+  if (fields.cta !== undefined) updates.cta = fields.cta;
+  if (fields.brandTone !== undefined) updates.brand_tone = fields.brandTone;
+  if (fields.language !== undefined) updates.language = fields.language;
+  if (Object.keys(updates).length === 0) return;
+  await supabase.from('offers').update(updates).eq('id', id);
+}
+
+export async function deleteOffer(id: string): Promise<void> {
+  await supabase.from('offers').delete().eq('id', id);
 }

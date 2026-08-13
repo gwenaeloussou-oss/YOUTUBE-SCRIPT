@@ -123,3 +123,45 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_expires_at timestamptz
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS billing_cycle text NOT NULL DEFAULT 'monthly';
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_billing_cycle_check;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_billing_cycle_check CHECK (billing_cycle IN ('monthly', 'annual'));
+
+-- ============================================================
+-- Multi-plateforme : offres + bibliothèque de contenus
+-- ============================================================
+
+-- 7. Table offers (fiche d'offre réutilisable pour la génération)
+CREATE TABLE IF NOT EXISTS public.offers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  sector text,
+  description text,
+  target text,
+  promise text,
+  differentiators text,
+  proof text,
+  commercial_terms text,
+  cta text,
+  brand_tone text DEFAULT 'expert',
+  language text NOT NULL DEFAULT 'Français',
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Gestion offres propres" ON public.offers;
+CREATE POLICY "Gestion offres propres" ON public.offers
+  FOR ALL USING (auth.uid() = user_id);
+
+-- 8. Extension de la table history en bibliothèque de contenus multi-plateforme
+ALTER TABLE public.history ADD COLUMN IF NOT EXISTS platform text NOT NULL DEFAULT 'youtube_long';
+ALTER TABLE public.history DROP CONSTRAINT IF EXISTS history_platform_check;
+ALTER TABLE public.history ADD CONSTRAINT history_platform_check
+  CHECK (platform IN ('youtube_long', 'youtube_short', 'facebook', 'linkedin', 'facebook_comment'));
+
+ALTER TABLE public.history ADD COLUMN IF NOT EXISTS offer_id uuid REFERENCES public.offers(id) ON DELETE SET NULL;
+ALTER TABLE public.history ADD COLUMN IF NOT EXISTS objective text;
+
+ALTER TABLE public.history ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'draft';
+ALTER TABLE public.history DROP CONSTRAINT IF EXISTS history_status_check;
+ALTER TABLE public.history ADD CONSTRAINT history_status_check
+  CHECK (status IN ('draft', 'validated', 'scheduled', 'published'));

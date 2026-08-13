@@ -1,14 +1,21 @@
 import { X, Youtube, Newspaper, Clock, Trash2, ChevronRight, AlignLeft } from 'lucide-react';
 
+export type PlatformId = 'youtube_long' | 'youtube_short' | 'facebook' | 'linkedin' | 'facebook_comment';
+export type ContentStatus = 'draft' | 'validated' | 'scheduled' | 'published';
+
 export type HistoryItem = {
   id: string;
   date: string;
-  sourceType: 'video' | 'article' | 'text';
+  sourceType: 'video' | 'article' | 'text' | 'offer';
   sourceUrl?: string;
   language: string;
   wordCount: number;
   titre: string;
   result: object;
+  platform?: PlatformId;
+  offerId?: string;
+  objective?: string;
+  status?: ContentStatus;
 };
 
 const MAX_HISTORY = 30;
