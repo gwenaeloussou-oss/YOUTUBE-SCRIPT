@@ -46,6 +46,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
   const [planExpiresAt, setPlanExpiresAt] = useState<Date | null>(null);
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState('');
@@ -333,6 +334,7 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
 
   const openUpgradeModal = () => {
     setShowUpgradeModal(true);
+    setBillingCycle('monthly');
     setCheckoutError(null);
     setPromoCode('');
     setShowPromoInput(false);
@@ -364,14 +366,14 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (plan: 'monthly' | 'annual' = billingCycle) => {
     setCheckoutLoading(true);
     setCheckoutError(null);
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, email: user.email }),
+        body: JSON.stringify({ userId: user.id, email: user.email, plan }),
       });
       const data = await res.json();
       if (!res.ok) { setCheckoutError(data.error || 'Erreur lors de la création du paiement.'); return; }
@@ -407,6 +409,15 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 <button onClick={() => setShowUpgradeModal(false)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all"><X className="w-4 h-4" /></button>
               </div>
 
+              <div className="flex bg-gray-100 rounded-2xl p-1">
+                <button onClick={() => setBillingCycle('monthly')} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${billingCycle === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
+                  Mensuel
+                </button>
+                <button onClick={() => setBillingCycle('annual')} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${billingCycle === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
+                  Annuel
+                </button>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
                   <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Gratuit</p>
@@ -422,7 +433,11 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
                 <div className="bg-gradient-to-br from-[#FF0000]/10 to-orange-500/10 border border-[#FF0000]/30 rounded-2xl p-4 space-y-3 relative">
                   <div className="absolute -top-2 -right-2 bg-[#FF0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">Recommandé</div>
                   <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
-                  <p className="text-2xl font-bold">10 000<span className="text-sm font-normal text-gray-400"> FCFA/mois</span></p>
+                  <p className="text-2xl font-bold">
+                    {billingCycle === 'monthly' ? '5 000' : '60 000'}
+                    <span className="text-sm font-normal text-gray-400"> {billingCycle === 'monthly' ? 'FCFA/mois' : 'FCFA/an'}</span>
+                  </p>
+                  {billingCycle === 'annual' && <p className="text-[11px] text-gray-400">soit 5 000 FCFA/mois</p>}
                   <ul className="space-y-2 text-xs text-gray-700">
                     <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> 60 scripts / mois</li>
                     <li className="flex items-center gap-2"><Check className="w-3 h-3 text-green-500" /> 4 langues</li>
@@ -480,9 +495,11 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
               )}
 
               {!promoSuccess && (
-                <button onClick={handleCheckout} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#e60000] disabled:bg-gray-100 disabled:text-gray-300 py-4 rounded-full font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-white shadow-lg shadow-red-500/20">
+                <button onClick={() => handleCheckout()} disabled={checkoutLoading} className="w-full bg-[#FF0000] hover:bg-[#e60000] disabled:bg-gray-100 disabled:text-gray-300 py-4 rounded-full font-bold flex items-center justify-center gap-3 transition-all active:scale-[0.98] text-white shadow-lg shadow-red-500/20">
                   {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-                  {checkoutLoading ? 'Redirection...' : isStandard ? 'Renouveler — 10 000 FCFA/mois' : 'Commencer — 10 000 FCFA/mois'}
+                  {checkoutLoading
+                    ? 'Redirection...'
+                    : `${isStandard ? 'Renouveler' : 'Commencer'} — ${billingCycle === 'monthly' ? '5 000 FCFA/mois' : '60 000 FCFA/an'}`}
                   {!checkoutLoading && <ArrowRight className="w-5 h-5" />}
                 </button>
               )}
@@ -675,9 +692,9 @@ export default function AppPage({ user, onLogout, onAdmin }: Props) {
               ? <span>Abonnement expiré — période de grâce : <strong>{graceDaysLeft} jour{(graceDaysLeft ?? 0) > 1 ? 's' : ''} restant{(graceDaysLeft ?? 0) > 1 ? 's' : ''}</strong>. Renouvelez pour ne pas perdre l'accès.</span>
               : <span>Abonnement expire dans <strong>{daysUntilExpiry} jour{(daysUntilExpiry ?? 0) > 1 ? 's' : ''}</strong>.</span>
             }
-            <button onClick={handleCheckout} disabled={checkoutLoading} className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/60 hover:bg-white/90 font-semibold text-xs transition-all">
+            <button onClick={() => handleCheckout('monthly')} disabled={checkoutLoading} className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/60 hover:bg-white/90 font-semibold text-xs transition-all">
               {checkoutLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-              Renouveler — 10 000 FCFA
+              Renouveler — 5 000 FCFA
             </button>
           </div>
         </div>

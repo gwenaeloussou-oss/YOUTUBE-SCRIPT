@@ -331,7 +331,7 @@ export default function LandingPage({ onStart }: Props) {
             <p className="text-gray-500 text-sm">Commencez gratuitement. Passez au Standard quand vous êtes prêt.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto items-start">
 
             {/* Free */}
             <motion.div
@@ -343,8 +343,8 @@ export default function LandingPage({ onStart }: Props) {
               <div className="space-y-1">
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Gratuit</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">0</span>
-                  <span className="text-gray-400 text-sm mb-2">FCFA / mois</span>
+                  <span className="text-4xl font-extrabold text-gray-900 whitespace-nowrap">0</span>
+                  <span className="text-gray-400 text-sm mb-1 whitespace-nowrap">FCFA / mois</span>
                 </div>
                 <p className="text-gray-400 text-xs">Sans carte bancaire</p>
               </div>
@@ -361,7 +361,7 @@ export default function LandingPage({ onStart }: Props) {
               </button>
             </motion.div>
 
-            {/* Standard */}
+            {/* Standard mensuel */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -373,12 +373,12 @@ export default function LandingPage({ onStart }: Props) {
                 <Crown className="w-3 h-3" /> Recommandé
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#FF0000]">Standard mensuel</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-5xl font-extrabold text-gray-900">10 000</span>
-                  <span className="text-gray-400 text-sm mb-2">FCFA / mois</span>
+                  <span className="text-4xl font-extrabold text-gray-900 whitespace-nowrap">5 000</span>
+                  <span className="text-gray-400 text-sm mb-1 whitespace-nowrap">FCFA / mois</span>
                 </div>
-                <p className="text-gray-400 text-xs">Paiement sécurisé</p>
+                <p className="text-gray-400 text-xs">Paiement sécurisé · sans engagement</p>
               </div>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> 60 scripts par mois</li>
@@ -390,6 +390,35 @@ export default function LandingPage({ onStart }: Props) {
               </ul>
               <button onClick={onStart} className="w-full py-3.5 rounded-2xl bg-[#FF0000] hover:bg-[#D90000] text-white font-bold text-sm transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,0,0,0.2)]">
                 <span className="flex items-center justify-center gap-2"><Zap className="w-4 h-4" /> Commencer maintenant</span>
+              </button>
+            </motion.div>
+
+            {/* Standard annuel */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white border border-gray-200 rounded-3xl p-8 space-y-6"
+            >
+              <div className="space-y-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Standard annuel</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-4xl font-extrabold text-gray-900 whitespace-nowrap">60 000</span>
+                  <span className="text-gray-400 text-sm mb-1 whitespace-nowrap">FCFA / an</span>
+                </div>
+                <p className="text-gray-400 text-xs">Soit 5 000 FCFA/mois, facturé une fois par an</p>
+              </div>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> 60 scripts par mois</li>
+                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Français, English, Español, Português</li>
+                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Vidéo, article & texte</li>
+                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Recherche web en temps réel</li>
+                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Prompt JSON miniature (IA image)</li>
+                <li className="flex items-center gap-3 text-gray-800"><Check className="w-4 h-4 text-green-500 flex-shrink-0" /> Un seul paiement pour l'année</li>
+              </ul>
+              <button onClick={onStart} className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 font-semibold text-sm transition-all active:scale-[0.98] text-gray-700">
+                Choisir l'annuel
               </button>
             </motion.div>
 

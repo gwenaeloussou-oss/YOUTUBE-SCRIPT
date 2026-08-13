@@ -2,7 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const CHARIOW_API_KEY = process.env.CHARIOW_API_KEY!;
-const PRODUCT_ID = 'prd_cdmpssyt';
+const PRODUCT_IDS: Record<'monthly' | 'annual', string | undefined> = {
+  monthly: 'prd_cdmpssyt',
+  annual: process.env.CHARIOW_PRODUCT_ANNUAL,
+};
 
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -12,8 +15,11 @@ const supabaseAdmin = createClient(
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { userId, email } = req.body as { userId: string; email: string };
+  const { userId, email, plan = 'monthly' } = req.body as { userId: string; email: string; plan?: 'monthly' | 'annual' };
   if (!userId || !email) return res.status(400).json({ error: 'userId et email requis.' });
+
+  const productId = PRODUCT_IDS[plan];
+  if (!productId) return res.status(400).json({ error: "L'abonnement annuel n'est pas encore disponible." });
 
   // Fetch user profile stored at signup
   const { data: profile } = await supabaseAdmin
@@ -33,12 +39,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Build request body — only include phone if we have valid data
   const body: Record<string, unknown> = {
-    product_id: PRODUCT_ID,
+    product_id: productId,
     email,
     first_name: firstName,
     last_name: lastName,
     redirect_url: `${appUrl}/?payment=success`,
-    custom_metadata: { userId },
+    custom_metadata: { userId, plan },
   };
   if (phoneLocal.length >= 6) {
     body.phone = { number: phoneLocal, country_code: countryCode };

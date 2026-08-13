@@ -44,15 +44,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       amount?: number;
       currency?: string;
       email?: string;
-      custom_metadata?: { userId?: string };
+      custom_metadata?: { userId?: string; plan?: 'monthly' | 'annual' };
     };
   };
 
   if (event === 'successful.sale') {
     const userId = sale?.custom_metadata?.userId;
+    const plan = sale?.custom_metadata?.plan ?? 'monthly';
+    const durationMs = plan === 'annual' ? 365 * 86_400_000 : 30 * 86_400_000;
 
     if (userId) {
-      // Extend plan by 30 days
+      // Extend plan by the purchased duration
       const { data: current } = await supabaseAdmin
         .from('profiles')
         .select('plan_expires_at')
@@ -62,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const now = new Date();
       const currentExpiry = current?.plan_expires_at ? new Date(current.plan_expires_at) : now;
       const baseDate = currentExpiry > now ? currentExpiry : now;
-      const newExpiry = new Date(baseDate.getTime() + 30 * 86_400_000);
+      const newExpiry = new Date(baseDate.getTime() + durationMs);
 
       await supabaseAdmin
         .from('profiles')
