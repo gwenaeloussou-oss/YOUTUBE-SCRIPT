@@ -74,6 +74,7 @@ export async function getHistory(userId: string): Promise<HistoryItem[]> {
     offerId: row.offer_id ?? undefined,
     objective: row.objective ?? undefined,
     status: row.status ?? undefined,
+    thumbnailUrl: row.thumbnail_url ?? undefined,
   }));
 }
 

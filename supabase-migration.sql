@@ -212,3 +212,16 @@ AS $$
   ORDER BY knowledge_chunks.embedding <=> query_embedding
   LIMIT match_count;
 $$;
+
+-- ============================================================
+-- Génération directe de miniature (image, une fois par script)
+-- ============================================================
+ALTER TABLE public.history ADD COLUMN IF NOT EXISTS thumbnail_url text;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('thumbnails', 'thumbnails', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Public read thumbnails" ON storage.objects;
+CREATE POLICY "Public read thumbnails" ON storage.objects
+  FOR SELECT USING (bucket_id = 'thumbnails');

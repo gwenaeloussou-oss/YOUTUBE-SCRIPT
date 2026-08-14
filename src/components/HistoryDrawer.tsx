@@ -16,6 +16,7 @@ export type HistoryItem = {
   offerId?: string;
   objective?: string;
   status?: ContentStatus;
+  thumbnailUrl?: string;
 };
 
 const MAX_HISTORY = 30;

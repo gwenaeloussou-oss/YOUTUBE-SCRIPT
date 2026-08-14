@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Loader2, AlertCircle, Copy, Check, Braces, Lock, Crown, Youtube, ChevronRight } from 'lucide-react';
+import { Image as ImageIcon, Loader2, AlertCircle, Copy, Check, Braces, Lock, Crown, Youtube, ChevronRight, Sparkles, Download } from 'lucide-react';
 import type { LoggedUser } from './AuthPage';
 import type { Page } from '../components/Sidebar';
 import * as db from '../lib/db';
@@ -33,7 +33,12 @@ export default function ThumbnailPage({ user, onNavigate }: Props) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promptJson, setPromptJson] = useState<string | null>(null);
+  const [promptImageFinal, setPromptImageFinal] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageGenerating, setImageGenerating] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const isStandard = plan === 'standard';
 
@@ -50,7 +55,11 @@ export default function ThumbnailPage({ user, onNavigate }: Props) {
   const selectScript = (id: string) => {
     setSelectedId(id);
     setPromptJson(null);
+    setPromptImageFinal(null);
     setError(null);
+    setImageError(null);
+    const item = scripts.find(s => s.id === id);
+    setImageUrl(item?.thumbnailUrl ?? null);
   };
 
   const generate = async () => {
@@ -76,11 +85,34 @@ export default function ThumbnailPage({ user, onNavigate }: Props) {
         setError(data.error || 'Erreur lors de la génération du prompt.');
         return;
       }
-      setPromptJson(JSON.stringify(await res.json(), null, 2));
+      const data = await res.json();
+      setPromptJson(JSON.stringify(data, null, 2));
+      setPromptImageFinal(typeof data.prompt_image_final === 'string' ? data.prompt_image_final : null);
     } catch {
       setError('Erreur réseau. Réessayez.');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const generateImage = async () => {
+    if (!selectedItem || !promptImageFinal) return;
+    setImageGenerating(true);
+    setImageError(null);
+    try {
+      const res = await fetch('/api/generate-thumbnail-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, historyId: selectedItem.id, prompt: promptImageFinal }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setImageError(data.error || "Erreur lors de la génération de l'image."); return; }
+      setImageUrl(data.thumbnail_url);
+      setScripts(prev => prev.map(s => s.id === selectedItem.id ? { ...s, thumbnailUrl: data.thumbnail_url } : s));
+    } catch {
+      setImageError('Erreur réseau. Réessayez.');
+    } finally {
+      setImageGenerating(false);
     }
   };
 
@@ -103,7 +135,7 @@ export default function ThumbnailPage({ user, onNavigate }: Props) {
         <ImageIcon className="w-5 h-5 text-[#FF0000]" />
         <div>
           <h1 className="text-lg font-bold tracking-tight">Miniature</h1>
-          <p className="text-gray-400 text-xs">Choisissez un script, générez son prompt miniature JSON prêt pour l'IA image.</p>
+          <p className="text-gray-400 text-xs">Choisissez un script et générez directement son image de miniature.</p>
         </div>
       </div>
 
@@ -170,13 +202,22 @@ export default function ThumbnailPage({ user, onNavigate }: Props) {
                 <button onClick={() => onNavigate('app')} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border border-gray-200 bg-gray-50 text-gray-400 text-sm">
                   <Lock className="w-4 h-4" /> Disponible en version Standard <Crown className="w-4 h-4 text-yellow-500" />
                 </button>
+              ) : imageUrl ? (
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-widest font-bold text-gray-400">Miniature générée</p>
+                  <img src={imageUrl} alt="Miniature générée" className="w-full rounded-2xl border border-gray-200" />
+                  <a href={imageUrl} download target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm transition-all">
+                    <Download className="w-4 h-4" /> Télécharger
+                  </a>
+                  <p className="text-[11px] text-gray-400">Une seule image est générée par script — celle-ci est définitive.</p>
+                </div>
               ) : !promptJson ? (
                 <button onClick={generate} disabled={generating} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[#FF0000] hover:bg-[#D90000] disabled:bg-gray-100 disabled:text-gray-300 text-white font-bold transition-all active:scale-[0.98]">
                   {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Braces className="w-4 h-4" />}
                   {generating ? 'Analyse du script en cours...' : 'Générer le prompt miniature'}
                 </button>
               ) : (
-                <div className="relative space-y-2">
+                <div className="relative space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-widest font-bold text-gray-400">Prompt JSON</p>
                     <button onClick={copyPrompt} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all text-xs font-medium">
@@ -184,7 +225,20 @@ export default function ThumbnailPage({ user, onNavigate }: Props) {
                     </button>
                   </div>
                   <pre className="w-full bg-[#0a0a0a] border border-gray-800 rounded-2xl p-4 text-xs text-green-400/80 leading-relaxed overflow-x-auto max-h-[420px] overflow-y-auto font-mono whitespace-pre-wrap">{promptJson}</pre>
-                  <p className="text-[11px] text-gray-400">Prompt structuré pour Midjourney, DALL·E, Flux... — la génération d'image directe arrive dans une prochaine mise à jour.</p>
+
+                  {imageError && (
+                    <div className="flex items-center gap-2 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{imageError}
+                    </div>
+                  )}
+
+                  {promptImageFinal && (
+                    <button onClick={generateImage} disabled={imageGenerating} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[#FF0000] hover:bg-[#D90000] disabled:bg-gray-100 disabled:text-gray-300 text-white font-bold transition-all active:scale-[0.98]">
+                      {imageGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      {imageGenerating ? "Génération de l'image en cours (10-20s)..." : "Générer l'image miniature"}
+                    </button>
+                  )}
+                  <p className="text-[11px] text-gray-400">Une seule image pourra être générée pour ce script.</p>
                 </div>
               )}
             </>
